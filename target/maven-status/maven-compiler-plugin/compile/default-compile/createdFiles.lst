@@ -1,5 +1,5 @@
 org/openjfx/controller/LoginController.class
 module-info.class
-org/openjfx/QuillPad.class
 org/openjfx/controller/DashboardController.class
+org/openjfx/QuillPad.class
 org/openjfx/controller/EditorController.class
