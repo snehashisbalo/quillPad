@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21"
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="org.openjfx.controller.LoginController"
+      alignment="CENTER"
+      spacing="20"
+      prefWidth="400"
+      prefHeight="300">
+
+    <children>
+        <Label text="QuillPad Login" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+
+        <VBox spacing="10" alignment="CENTER_LEFT">
+            <Label text="Username:"/>
+            <TextField fx:id="usernameField" promptText="Enter username"/>
+        </VBox>
+
+        <VBox spacing="10" alignment="CENTER_LEFT">
+            <Label text="Password:"/>
+            <PasswordField fx:id="passwordField" promptText="Enter password"/>
+        </VBox>
+
+        <Button fx:id="loginButton" text="Login" onAction="#handleLogin" prefWidth="100"/>
+    </children>
+
+</VBox>

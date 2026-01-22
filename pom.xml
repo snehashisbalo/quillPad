@@ -24,6 +24,12 @@
             <version>${javafx.version}</version>
         </dependency>
 
+        <!-- JavaFX FXML -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
 
     </dependencies>
 
@@ -42,11 +48,11 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>${javafx.maven.plugin.version}</version>
                 <configuration>
-                     <mainClass>org.openjfx.HelloApplication</mainClass>
+                     <mainClass>org.openjfx.QuillPad</mainClass>
                      <launcher>quillPad</launcher>
                      <jlinkImageName>quillPad</jlinkImageName>
                      <options>
-                         <option>--add-modules javafx.controls</option>
+                         <option>--add-modules javafx.controls,javafx.fxml</option>
                      </options>
                 </configuration>
             </plugin>

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.openjfx.controller.DashboardController">
+
+    <!-- Left Sidebar -->
+    <left>
+        <VBox spacing="10" prefWidth="200" style="-fx-background-color: #f0f0f0; -fx-padding: 10;">
+            <children>
+                <Label text="Options" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+                <Button fx:id="homeButton" text="Home" onAction="#handleHome"/>
+                <Button fx:id="logoutButton" text="Logout" onAction="#handleLogout"/>
+            </children>
+        </VBox>
+    </left>
+
+    <!-- Center: Main Content -->
+    <center>
+        <VBox spacing="20" alignment="CENTER" style="-fx-padding: 20;">
+            <children>
+                <Label text="Welcome to QuillPad" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+
+                <HBox spacing="20" alignment="CENTER">
+                    <VBox spacing="10" alignment="CENTER">
+                        <Label text="New Project" style="-fx-font-size: 18px;"/>
+                        <Button fx:id="newProjectButton" text="Create New Note" onAction="#handleNewProject" prefWidth="150" prefHeight="100"/>
+                    </VBox>
+                </HBox>
+
+                <VBox spacing="10" alignment="TOP_LEFT">
+                    <Label text="Recent Projects" style="-fx-font-size: 18px;"/>
+                    <ListView fx:id="recentProjectsList" prefHeight="200" onMouseClicked="#handleProjectSelected"/>
+                </VBox>
+            </children>
+        </VBox>
+    </center>
+
+</BorderPane>

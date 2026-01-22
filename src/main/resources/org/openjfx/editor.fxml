@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.openjfx.controller.EditorController">
+
+    <!-- TOP: Menu Bar -->
+    <top>
+        <MenuBar>
+            <menus>
+                <Menu text="File">
+                    <items>
+                        <MenuItem text="New"/>
+                        <MenuItem text="Open"/>
+                        <MenuItem text="Save"/>
+                        <MenuItem text="Save As"/>
+                        <SeparatorMenuItem/>
+                        <MenuItem text="Close"/>
+                    </items>
+                </Menu>
+
+                <Menu text="Edit">
+                    <items>
+                        <MenuItem text="Undo"/>
+                        <MenuItem text="Redo"/>
+                        <SeparatorMenuItem/>
+                        <MenuItem text="Cut"/>
+                        <MenuItem text="Copy"/>
+                        <MenuItem text="Paste"/>
+                        <MenuItem text="Delete"/>
+                    </items>
+                </Menu>
+
+                <Menu text="View">
+                    <items>
+                        <MenuItem text="Theme"/>
+                        <MenuItem text="Font Size"/>
+                    </items>
+                </Menu>
+
+                <Menu text="Help">
+                    <items>
+                        <MenuItem text="About"/>
+                    </items>
+                </Menu>
+            </menus>
+        </MenuBar>
+    </top>
+
+    <!-- CENTER: Tabbed Editor -->
+    <center>
+        <TabPane fx:id="tabPane" tabClosingPolicy="ALL_TABS">
+            <tabs>
+                <Tab text="Untitled 1">
+                    <content>
+                        <TextArea fx:id="textArea"
+                                  wrapText="true"/>
+                    </content>
+                </Tab>
+            </tabs>
+        </TabPane>
+    </center>
+
+    <!-- BOTTOM: Status Bar -->
+    <bottom>
+        <HBox spacing="10" style="-fx-padding: 5;">
+            <children>
+                <Label fx:id="lineLabel" text="Line: 1"/>
+                <Label fx:id="columnLabel" text="Column: 1"/>
+                <Label fx:id="fileStatusLabel" text="Saved"/>
+            </children>
+        </HBox>
+    </bottom>
+
+</BorderPane>
