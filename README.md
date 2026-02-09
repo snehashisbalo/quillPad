@@ -5,6 +5,7 @@ A production-grade JavaFX IDE with comprehensive features for software developme
 ## Features
 
 ### Core Editor Features
+
 - **Multi-tab Editing**: Open and edit multiple files in tabs
 - **File Operations**: New, Open, Save, Save As with file chooser dialogs
 - **Edit Operations**: Undo/Redo, Cut/Copy/Paste, Select All
@@ -14,18 +15,21 @@ A production-grade JavaFX IDE with comprehensive features for software developme
 - **Status Bar**: Shows line/column position, encoding, line ending
 
 ### File & Project Management
+
 - **Recent Files**: Tracks recently opened files
 - **File Explorer**: Side panel showing project structure
 - **Multiple Encoding Support**: UTF-8 encoding by default
 - **Recent Sessions**: Saves and restores recent files
 
 ### View Features
+
 - **Zoom Controls**: Zoom in/out with keyboard shortcuts
 - **Side Panel Toggle**: Show/hide the file explorer
 - **Terminal Panel**: Integrated terminal panel
 - **Dark Theme**: Professional dark color scheme
 
 ### Keyboard Shortcuts
+
 | Action | Shortcut |
 |--------|----------|
 | New File | Ctrl+N |
@@ -48,10 +52,12 @@ A production-grade JavaFX IDE with comprehensive features for software developme
 ## Building
 
 ### Prerequisites
+
 - Java 17 or higher
 - Maven 3.6+
 
 ### Build Commands
+
 ```bash
 # Compile the project
 mvn clean compile
@@ -66,16 +72,19 @@ mvn test
 ## Running
 
 ### Using Maven
+
 ```bash
 mvn javafx:run
 ```
 
 ### Using the JAR
+
 ```bash
 java -jar target/quillpad-1.0.0-SNAPSHOT.jar
 ```
 
 ### Using the launcher script
+
 ```bash
 ./run.sh
 ```
@@ -126,25 +135,10 @@ quillpad/
 
 5. **StatusBar** - Bottom status bar
 
-### UI Layout
-```
-┌─────────────────────────────────────────────────┐
-│ Menu Bar                                        │
-├────────────┬────────────────────────────────────┤
-│            │                                    │
-│ Side Panel │           Tab Pane                │
-│            │                                    │
-│            │                                    │
-├────────────┼────────────────────────────────────┤
-│ Terminal Panel                                 │
-├────────────────────────────────────────────────┤
-│ Status Bar                                     │
-└────────────────────────────────────────────────┘
-```
-
 ## Configuration
 
 Settings are stored in:
+
 - Linux/macOS: `~/.quillpad/`
 - Windows: `%USERPROFILE%\.quillpad\`
 
