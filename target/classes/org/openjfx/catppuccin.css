@@ -1,0 +1,348 @@
+/* ===========================
+   Catppuccin Theme (Mocha)
+   https://github.com/catppuccin/catppuccin
+   =========================== */
+
+.catppuccin-theme {
+    /* Base Colors */
+    -fx-cat-base: #1e1e2e;
+    -fx-cat-mantle: #181825;
+    -fx-cat-crust: #11111b;
+    
+    /* Surface Colors */
+    -fx-cat-surface0: #313244;
+    -fx-cat-surface1: #45475a;
+    -fx-cat-surface2: #585b70;
+    
+    /* Overlay Colors */
+    -fx-cat-overlay0: #6c7086;
+    -fx-cat-overlay1: #7f849c;
+    -fx-cat-overlay2: #9399b2;
+    
+    /* Text Colors */
+    -fx-cat-subtext0: #a6adc8;
+    -fx-cat-subtext1: #bac2de;
+    -fx-cat-text: #cdd6f4;
+    
+    /* Accent Colors */
+    -fx-cat-lavender: #b4befe;
+    -fx-cat-blue: #89b4fa;
+    -fx-cat-sapphire: #74c7ec;
+    -fx-cat-sky: #89dceb;
+    -fx-cat-teal: #94e2d5;
+    -fx-cat-green: #a6e3a1;
+    -fx-cat-yellow: #f9e2af;
+    -fx-cat-peach: #fab387;
+    -fx-cat-maroon: #eba0ac;
+    -fx-cat-red: #f38ba8;
+    -fx-cat-mauve: #cba6f7;
+    -fx-cat-pink: #f5c2e7;
+    -fx-cat-flamingo: #f2cdcd;
+    -fx-cat-rosewater: #f5e0dc;
+    
+    /* Theme Application */
+    -fx-background-color: -fx-cat-base;
+    -fx-text-fill: -fx-cat-text;
+    
+    /* Primary Colors */
+    -fx-primary-color: -fx-cat-mauve;
+    -fx-primary-dark: -fx-cat-pink;
+    -fx-secondary-color: -fx-cat-blue;
+    -fx-danger-color: -fx-cat-red;
+    -fx-warning-color: -fx-cat-yellow;
+    
+    /* Background Colors */
+    -fx-background: -fx-cat-base;
+    -fx-surface: -fx-cat-surface0;
+    -fx-overlay: -fx-cat-overlay0;
+}
+
+/* Login Screen - Catppuccin */
+.catppuccin-theme .login-container {
+    -fx-background-color: linear-gradient(to bottom right, -fx-cat-crust 0%, -fx-cat-mantle 100%);
+}
+
+.catppuccin-theme .app-title {
+    -fx-text-fill: -fx-cat-mauve;
+}
+
+.catppuccin-theme .app-subtitle {
+    -fx-text-fill: -fx-cat-subtext0;
+}
+
+.catppuccin-theme .form-container {
+    -fx-background-color: -fx-cat-surface0;
+    -fx-effect: dropshadow(gaussian, rgba(203, 166, 247, 0.2), 20, 0, 0, 5);
+}
+
+.catppuccin-theme .form-label {
+    -fx-text-fill: -fx-cat-subtext1;
+}
+
+.catppuccin-theme .form-input {
+    -fx-background-color: -fx-cat-surface1;
+    -fx-border-color: -fx-cat-surface2;
+    -fx-text-fill: -fx-cat-text;
+    -fx-prompt-text-fill: -fx-cat-overlay0;
+}
+
+.catppuccin-theme .form-input:focused {
+    -fx-border-color: -fx-cat-mauve;
+    -fx-effect: dropshadow(gaussian, rgba(203, 166, 247, 0.3), 8, 0, 0, 0);
+}
+
+.catppuccin-theme .login-button {
+    -fx-background-color: -fx-cat-mauve;
+    -fx-text-fill: -fx-cat-crust;
+    -fx-font-weight: bold;
+}
+
+.catppuccin-theme .login-button:hover {
+    -fx-background-color: -fx-cat-pink;
+    -fx-scale-y: 1.02;
+    -fx-scale-x: 1.02;
+}
+
+.catppuccin-theme .register-button {
+    -fx-border-color: -fx-cat-blue;
+    -fx-text-fill: -fx-cat-blue;
+}
+
+.catppuccin-theme .register-button:hover {
+    -fx-background-color: -fx-cat-blue;
+    -fx-text-fill: -fx-cat-crust;
+}
+
+.catppuccin-theme .hint-label {
+    -fx-text-fill: -fx-cat-overlay1;
+}
+
+.catppuccin-theme .error-label {
+    -fx-text-fill: -fx-cat-red;
+}
+
+/* Dashboard - Catppuccin */
+.catppuccin-theme .dashboard-container {
+    -fx-background-color: -fx-cat-base;
+}
+
+.catppuccin-theme .sidebar {
+    -fx-background-color: -fx-cat-mantle;
+    -fx-border-color: -fx-cat-surface0;
+}
+
+.catppuccin-theme .sidebar-title {
+    -fx-text-fill: -fx-cat-lavender;
+}
+
+.catppuccin-theme .sidebar-button {
+    -fx-text-fill: -fx-cat-subtext1;
+}
+
+.catppuccin-theme .sidebar-button:hover {
+    -fx-background-color: -fx-cat-surface0;
+    -fx-text-fill: -fx-cat-mauve;
+}
+
+.catppuccin-theme .primary-button {
+    -fx-background-color: -fx-cat-mauve;
+    -fx-text-fill: -fx-cat-crust;
+}
+
+.catppuccin-theme .primary-button:hover {
+    -fx-background-color: -fx-cat-pink;
+}
+
+.catppuccin-theme .logout-button {
+    -fx-border-color: -fx-cat-red;
+    -fx-text-fill: -fx-cat-red;
+}
+
+.catppuccin-theme .logout-button:hover {
+    -fx-background-color: -fx-cat-red;
+    -fx-text-fill: -fx-cat-crust;
+}
+
+.catppuccin-theme .main-content {
+    -fx-background-color: -fx-cat-base;
+}
+
+.catppuccin-theme .page-title {
+    -fx-text-fill: -fx-cat-mauve;
+}
+
+.catppuccin-theme .stats-label {
+    -fx-text-fill: -fx-cat-subtext0;
+}
+
+.catppuccin-theme .new-note-card {
+    -fx-background-color: -fx-cat-surface0;
+    -fx-effect: dropshadow(gaussian, rgba(203, 166, 247, 0.15), 10, 0, 0, 2);
+}
+
+.catppuccin-theme .new-note-card:hover {
+    -fx-effect: dropshadow(gaussian, rgba(203, 166, 247, 0.25), 15, 0, 0, 3);
+}
+
+.catppuccin-theme .create-button {
+    -fx-background-color: -fx-cat-mauve;
+    -fx-text-fill: -fx-cat-crust;
+}
+
+.catppuccin-theme .create-button:hover {
+    -fx-background-color: -fx-cat-pink;
+}
+
+.catppuccin-theme .section-title {
+    -fx-text-fill: -fx-cat-lavender;
+}
+
+.catppuccin-theme .search-field {
+    -fx-background-color: -fx-cat-surface0;
+    -fx-border-color: -fx-cat-surface1;
+    -fx-text-fill: -fx-cat-text;
+    -fx-prompt-text-fill: -fx-cat-overlay0;
+}
+
+.catppuccin-theme .search-field:focused {
+    -fx-border-color: -fx-cat-mauve;
+}
+
+.catppuccin-theme .notes-list {
+    -fx-background-color: -fx-cat-surface0;
+    -fx-border-color: -fx-cat-surface1;
+}
+
+.catppuccin-theme .notes-list .list-cell {
+    -fx-background-color: -fx-cat-surface0;
+    -fx-text-fill: -fx-cat-text;
+}
+
+.catppuccin-theme .notes-list .list-cell:hover {
+    -fx-background-color: -fx-cat-surface1;
+}
+
+.catppuccin-theme .notes-list .list-cell:selected {
+    -fx-background-color: -fx-cat-mauve;
+    -fx-text-fill: -fx-cat-crust;
+}
+
+.catppuccin-theme .icon-button {
+    -fx-text-fill: -fx-cat-blue;
+    -fx-border-color: -fx-cat-blue;
+}
+
+.catppuccin-theme .icon-button:hover {
+    -fx-background-color: -fx-cat-blue;
+    -fx-text-fill: -fx-cat-crust;
+}
+
+.catppuccin-theme .delete-button {
+    -fx-text-fill: -fx-cat-red;
+    -fx-border-color: -fx-cat-red;
+}
+
+.catppuccin-theme .delete-button:hover {
+    -fx-background-color: -fx-cat-red;
+    -fx-text-fill: -fx-cat-crust;
+}
+
+/* Editor - Catppuccin */
+.catppuccin-theme .editor-container {
+    -fx-background-color: -fx-cat-base;
+}
+
+.catppuccin-theme .menu-bar {
+    -fx-background-color: -fx-cat-mantle;
+    -fx-border-color: -fx-cat-surface0;
+}
+
+.catppuccin-theme .menu-bar .menu {
+    -fx-text-fill: -fx-cat-text;
+}
+
+.catppuccin-theme .menu-bar .menu-item {
+    -fx-text-fill: -fx-cat-text;
+}
+
+.catppuccin-theme .menu-bar .menu-item:focused {
+    -fx-background-color: -fx-cat-surface1;
+}
+
+.catppuccin-theme .editor-tabs {
+    -fx-background-color: -fx-cat-base;
+}
+
+.catppuccin-theme .editor-tabs .tab-header-background {
+    -fx-background-color: -fx-cat-mantle;
+}
+
+.catppuccin-theme .editor-tabs .tab {
+    -fx-background-color: -fx-cat-surface0;
+}
+
+.catppuccin-theme .editor-tabs .tab:selected {
+    -fx-background-color: -fx-cat-surface1;
+}
+
+.catppuccin-theme .editor-tabs .tab .tab-label {
+    -fx-text-fill: -fx-cat-text;
+}
+
+.catppuccin-theme .text-area {
+    -fx-control-inner-background: -fx-cat-base;
+    -fx-text-fill: -fx-cat-text;
+    -fx-font-family: "Consolas", "Monaco", "Courier New", monospace;
+    -fx-highlight-fill: -fx-cat-surface2;
+    -fx-highlight-text-fill: -fx-cat-text;
+}
+
+.catppuccin-theme .text-area .content {
+    -fx-background-color: -fx-cat-base;
+}
+
+.catppuccin-theme .status-bar {
+    -fx-background-color: -fx-cat-mantle;
+    -fx-border-color: -fx-cat-surface0;
+}
+
+.catppuccin-theme .status-item {
+    -fx-text-fill: -fx-cat-subtext1;
+}
+
+.catppuccin-theme .version-label {
+    -fx-text-fill: -fx-cat-overlay0;
+}
+
+/* Theme Toggle Button */
+.catppuccin-theme .theme-toggle-button {
+    -fx-background-color: -fx-cat-surface1;
+    -fx-text-fill: -fx-cat-text;
+    -fx-background-radius: 20;
+    -fx-min-width: 40;
+    -fx-min-height: 40;
+    -fx-font-size: 18;
+}
+
+.catppuccin-theme .theme-toggle-button:hover {
+    -fx-background-color: -fx-cat-surface2;
+    -fx-cursor: hand;
+}
+/* Input Fields - Catppuccin */
+.catppuccin-theme .input-field-container {
+    -fx-background-color: -fx-cat-surface1;
+    -fx-border-color: -fx-cat-surface2;
+}
+
+.catppuccin-theme .form-input {
+    -fx-text-fill: -fx-cat-text;
+    -fx-prompt-text-fill: -fx-cat-overlay0;
+}
+
+.catppuccin-theme .form-input .text {
+    -fx-fill: -fx-cat-text;
+}
+
+.catppuccin-theme .input-icon {
+    -fx-text-fill: -fx-cat-overlay1;
+}

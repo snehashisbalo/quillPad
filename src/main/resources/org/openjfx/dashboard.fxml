@@ -1,40 +1,212 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="org.openjfx.controller.DashboardController">
+            fx:controller="org.openjfx.controller.DashboardController"
+            styleClass="dashboard-container">
 
     <!-- Left Sidebar -->
     <left>
-        <VBox spacing="10" prefWidth="200" style="-fx-background-color: #f0f0f0; -fx-padding: 10;">
+        <VBox styleClass="sidebar" prefWidth="240" spacing="5">
+            <padding>
+                <Insets top="20" right="15" bottom="20" left="15"/>
+            </padding>
             <children>
-                <Label text="Options" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
-                <Button fx:id="homeButton" text="Home" onAction="#handleHome"/>
-                <Button fx:id="logoutButton" text="Logout" onAction="#handleLogout"/>
+                <!-- New Note Button -->
+                <Button fx:id="newProjectButton"
+                        text="+ New Note"
+                        styleClass="create-button, primary-button"
+                        onAction="#handleNewProject"
+                        maxWidth="Infinity"
+                        prefHeight="40">
+                    <font>
+                        <Font name="System Bold" size="14"/>
+                    </font>
+                </Button>
+
+                <Separator styleClass="sidebar-separator">
+                    <VBox.margin>
+                        <Insets top="10" bottom="10"/>
+                    </VBox.margin>
+                </Separator>
+
+                <!-- Navigation Items -->
+                <HBox styleClass="sidebar-btn-text" onMouseClicked="#handleHome">
+                    <children>
+                        <Label text="🏠" style="-fx-font-size: 16px;"/>
+                        <Label text="Home" styleClass="sidebar-btn-text">
+                            <HBox.margin>
+                                <Insets left="10"/>
+                            </HBox.margin>
+                        </Label>
+                    </children>
+                    <padding>
+                        <Insets top="8" right="10" bottom="8" left="10"/>
+                    </padding>
+                </HBox>
+
+                <HBox styleClass="sidebar-btn-text">
+                    <children>
+                        <Label text="📝" style="-fx-font-size: 16px;"/>
+                        <Label text="My Notes" styleClass="sidebar-btn-text">
+                            <HBox.margin>
+                                <Insets left="10"/>
+                            </HBox.margin>
+                        </Label>
+                    </children>
+                    <padding>
+                        <Insets top="8" right="10" bottom="8" left="10"/>
+                    </padding>
+                </HBox>
+
+                <HBox styleClass="sidebar-btn-text">
+                    <children>
+                        <Label text="⭐" style="-fx-font-size: 16px;"/>
+                        <Label text="Starred" styleClass="sidebar-btn-text">
+                            <HBox.margin>
+                                <Insets left="10"/>
+                            </HBox.margin>
+                        </Label>
+                    </children>
+                    <padding>
+                        <Insets top="8" right="10" bottom="8" left="10"/>
+                    </padding>
+                </HBox>
+
+                <HBox styleClass="sidebar-btn-text">
+                    <children>
+                        <Label text="🗑️" style="-fx-font-size: 16px;"/>
+                        <Label text="Trash" styleClass="sidebar-btn-text">
+                            <HBox.margin>
+                                <Insets left="10"/>
+                            </HBox.margin>
+                        </Label>
+                    </children>
+                    <padding>
+                        <Insets top="8" right="10" bottom="8" left="10"/>
+                    </padding>
+                </HBox>
+
+                <Region VBox.vgrow="ALWAYS"/>
+
+                <!-- Settings Button -->
+                <Button fx:id="settingsButton"
+                        text="⚙️ Settings"
+                        styleClass="sidebar-button"
+                        onAction="#handleSettings"
+                        maxWidth="Infinity"
+                        prefHeight="40">
+                    <VBox.margin>
+                        <Insets bottom="5"/>
+                    </VBox.margin>
+                </Button>
+
+                <!-- Theme Toggle Button -->
+                <Button fx:id="themeToggleButton"
+                        text="🌸 Theme"
+                        styleClass="sidebar-button"
+                        onAction="#handleThemeToggle"
+                        maxWidth="Infinity"
+                        prefHeight="40">
+                    <VBox.margin>
+                        <Insets bottom="5"/>
+                    </VBox.margin>
+                </Button>
+
+                <!-- Logout Button -->
+                <Button fx:id="logoutButton"
+                        text="🚪 Logout"
+                        styleClass="sidebar-button, logout-button"
+                        onAction="#handleLogout"
+                        maxWidth="Infinity"
+                        prefHeight="40"/>
             </children>
         </VBox>
     </left>
 
-    <!-- Center: Main Content -->
+    <!-- Center Content -->
     <center>
-        <VBox spacing="20" alignment="CENTER" style="-fx-padding: 20;">
+        <VBox spacing="15">
+            <padding>
+                <Insets top="20" right="20" bottom="20" left="20"/>
+            </padding>
             <children>
-                <Label text="Welcome to QuillPad" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
+                <!-- Header -->
+                <HBox alignment="CENTER_LEFT" spacing="15">
+                    <children>
+                        <Label text="📝" style="-fx-font-size: 28px;"/>
+                        <Label text="QuillPad" styleClass="page-title">
+                            <font>
+                                <Font name="System Bold" size="22"/>
+                            </font>
+                        </Label>
 
-                <HBox spacing="20" alignment="CENTER">
-                    <VBox spacing="10" alignment="CENTER">
-                        <Label text="New Project" style="-fx-font-size: 18px;"/>
-                        <Button fx:id="newProjectButton" text="Create New Note" onAction="#handleNewProject" prefWidth="150" prefHeight="100"/>
-                    </VBox>
+                        <Region HBox.hgrow="ALWAYS"/>
+
+                        <TextField fx:id="searchField"
+                                   promptText="🔍 Search notes..."
+                                   prefWidth="250"
+                                   styleClass="search-field"/>
+
+                        <Label fx:id="welcomeLabel" text="Welcome!" styleClass="stats-label">
+                            <font>
+                                <Font size="14"/>
+                            </font>
+                        </Label>
+                    </children>
                 </HBox>
 
-                <VBox spacing="10" alignment="TOP_LEFT">
-                    <Label text="Recent Projects" style="-fx-font-size: 18px;"/>
-                    <ListView fx:id="recentProjectsList" prefHeight="200" onMouseClicked="#handleProjectSelected"/>
-                </VBox>
+                <Separator/>
+
+                <!-- Recent Notes Section -->
+                <HBox alignment="CENTER_LEFT">
+                    <children>
+                        <Label text="Recent Notes" styleClass="section-title">
+                            <font>
+                                <Font name="System Bold" size="20"/>
+                            </font>
+                        </Label>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="statsLabel" text="0 notes" styleClass="stats-label">
+                            <font>
+                                <Font size="14"/>
+                            </font>
+                        </Label>
+                        <Button fx:id="refreshButton"
+                                text="🔄"
+                                styleClass="icon-button"
+                                onAction="#handleRefresh">
+                            <HBox.margin>
+                                <Insets left="10"/>
+                            </HBox.margin>
+                        </Button>
+                    </children>
+                </HBox>
+
+                <!-- Notes List -->
+                <ListView fx:id="recentProjectsList"
+                          styleClass="notes-list"
+                          onMouseClicked="#handleProjectSelected"
+                          VBox.vgrow="ALWAYS"/>
+
+                <!-- Action Buttons -->
+                <HBox spacing="10" alignment="CENTER">
+                    <Button fx:id="deleteButton"
+                            text="🗑️ Delete Selected"
+                            styleClass="delete-button"
+                            onAction="#handleDelete"/>
+                </HBox>
+
+                <Label text="💡 Tip: Double-click a note to open it" styleClass="hint-label">
+                    <font>
+                        <Font size="12"/>
+                    </font>
+                </Label>
             </children>
         </VBox>
     </center>

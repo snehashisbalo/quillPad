@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.input.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<!--
+  Editor Tab FXML for QuillPad
+  
+  This layout file defines the structure for individual editor tabs in the QuillPad
+  code editor application. It includes:
+  - Tab with close button
+  - TextArea for editing
+  - Line number gutter
+  - Status indicator
+  - Context menu support
+  
+  @author QuillPad Team
+  @version 1.0.0
+  @since 1.0.0
+-->
+
+<VBox xmlns="http://javafx.com/javafx/17.0.2-ea" 
+      xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="org.quillpad.controller.EditorTabController"
+      styleClass="editor-tab-container"
+      stylesheets="/org/quillpad/styles/editor-tab.css">
+
+  <!-- Main Editor Area -->
+  <HBox styleClass="editor-area" VBox.vgrow="ALWAYS">
+    
+    <!-- Line Numbers Gutter -->
+    <VBox fx:id="lineNumbersGutter" styleClass="line-numbers-gutter" minWidth="40" maxWidth="60">
+      <padding>
+        <Insets top="0" right="5" bottom="0" left="5"/>
+      </padding>
+    </VBox>
+    
+    <!-- Main Text Area -->
+    <StackPane styleClass="text-area-container" HBox.hgrow="ALWAYS">
+      <TextArea fx:id="textArea" 
+                styleClass="editor-text-area"
+                wrapText="false"
+                editable="true"
+                prefColumnCount="80"
+                prefRowCount="25"
+                font="$editorFont">
+        <contextMenu>
+          <ContextMenu fx:id="contextMenu">
+            <items>
+              <MenuItem text="Undo" accelerator="Shortcut+Z" fx:id="undoMenuItem"/>
+              <MenuItem text="Redo" accelerator="Shortcut+Y" fx:id="redoMenuItem"/>
+              <SeparatorMenuItem/>
+              <MenuItem text="Cut" accelerator="Shortcut+X" fx:id="cutMenuItem"/>
+              <MenuItem text="Copy" accelerator="Shortcut+C" fx:id="copyMenuItem"/>
+              <MenuItem text="Paste" accelerator="Shortcut+V" fx:id="pasteMenuItem"/>
+              <MenuItem text="Select All" accelerator="Shortcut+A" fx:id="selectAllMenuItem"/>
+              <SeparatorMenuItem/>
+              <MenuItem text="Delete" accelerator="Delete" fx:id="deleteMenuItem"/>
+            </items>
+          </ContextMenu>
+        </contextMenu>
+      </TextArea>
+      
+      <!-- Minimap (initially hidden) -->
+      <VBox fx:id="minimapContainer" styleClass="minimap-container" visible="false" managed="false">
+        <Region styleClass="minimap" prefWidth="100"/>
+      </VBox>
+    </StackPane>
+    
+  </HBox>
+
+  <!-- Bottom Status Bar -->
+  <HBox styleClass="tab-status-bar" alignment="CENTER_LEFT" prefHeight="25">
+    <padding>
+      <Insets top="2" right="10" bottom="2" left="10"/>
+    </padding>
+    <spacing>10</spacing>
+    
+    <!-- File Status Indicator -->
+    <HBox fx:id="statusIndicator" styleClass="status-indicator" minWidth="50" maxWidth="50" alignment="CENTER">
+      <Label fx:id="statusIcon" styleClass="status-icon" text="●"/>
+    </HBox>
+    
+    <!-- File Type Label -->
+    <Label fx:id="fileTypeLabel" styleClass="file-type-label" text="Plain Text"/>
+    
+    <!-- Spacer -->
+    <Region HBox.hgrow="ALWAYS"/>
+    
+    <!-- Line/Column Info -->
+    <Label fx:id="lineCountLabel" styleClass="line-info-label" text="Ln 1, Col 1"/>
+    
+    <!-- Encoding -->
+    <Separator orientation="vertical" styleClass="status-separator"/>
+    <Label fx:id="encodingLabel" styleClass="encoding-label" text="UTF-8"/>
+    
+    <!-- Line Ending -->
+    <Separator orientation="vertical" styleClass="status-separator"/>
+    <Label fx:id="lineEndingLabel" styleClass="line-ending-label" text="LF"/>
+    
+    <!-- Indentation -->
+    <Separator orientation="vertical" styleClass="status-separator"/>
+    <Label fx:id="indentLabel" styleClass="indent-label" text="Spaces: 4"/>
+    
+  </HBox>
+
+</VBox>

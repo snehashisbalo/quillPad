@@ -1,0 +1,40 @@
+/* QuillPad IDE - Dark Theme Stylesheet */
+.root {
+    -fx-background-color: #1e1e1e;
+    -fx-text-fill: #d4d4d4;
+}
+.menu-bar {
+    -fx-background-color: #2d2d2d;
+}
+.menu {
+    -fx-text-fill: #ffffff;
+}
+.tab-pane {
+    -fx-background-color: #1e1e1e;
+}
+.tab {
+    -fx-background-color: #2d2d2d;
+    -fx-text-fill: #ffffff;
+}
+.tab:selected {
+    -fx-background-color: #1e1e1e;
+    -fx-border-color: #007acc;
+}
+.text-area {
+    -fx-control-inner-background: #1e1e1e;
+    -fx-text-fill: #d4d4d4;
+}
+.tree-view {
+    -fx-background-color: #252526;
+}
+.list-view {
+    -fx-background-color: #252526;
+}
+.button {
+    -fx-background-color: #0e639c;
+    -fx-text-fill: #ffffff;
+}
+.status-bar {
+    -fx-background-color: #007acc;
+    -fx-text-fill: #ffffff;
+}

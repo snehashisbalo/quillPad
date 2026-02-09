@@ -1,30 +1,187 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
 
-<VBox xmlns="http://javafx.com/javafx/21"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="org.openjfx.controller.LoginController"
-      alignment="CENTER"
-      spacing="20"
-      prefWidth="400"
-      prefHeight="300">
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="org.openjfx.controller.LoginController"
+            styleClass="login-container">
 
-    <children>
-        <Label text="QuillPad Login" style="-fx-font-size: 24px; -fx-font-weight: bold;"/>
-
-        <VBox spacing="10" alignment="CENTER_LEFT">
-            <Label text="Username:"/>
-            <TextField fx:id="usernameField" promptText="Enter username"/>
+    <!-- Left Side - Illustration Area -->
+    <left>
+        <VBox styleClass="login-left-panel"
+              alignment="CENTER"
+              prefWidth="400"
+              minWidth="300">
+            <children>
+                <Label text="QuillPad" styleClass="app-title">
+                    <font>
+                        <Font name="System Bold" size="42"/>
+                    </font>
+                </Label>
+                <Label text="Note Taking" styleClass="app-subtitle">
+                    <font>
+                        <Font size="24"/>
+                    </font>
+                    <VBox.margin>
+                        <Insets top="10"/>
+                    </VBox.margin>
+                </Label>
+                <Label text="Made Simple" styleClass="app-subtitle">
+                    <font>
+                        <Font size="24"/>
+                    </font>
+                </Label>
+            </children>
         </VBox>
+    </left>
 
-        <VBox spacing="10" alignment="CENTER_LEFT">
-            <Label text="Password:"/>
-            <PasswordField fx:id="passwordField" promptText="Enter password"/>
+    <!-- Right Side - Login Form -->
+    <center>
+        <VBox alignment="CENTER"
+              styleClass="login-right-panel"
+              minWidth="400">
+            <padding>
+                <Insets top="20" right="20" bottom="20" left="20"/>
+            </padding>
+            <children>
+                <!-- Form Container -->
+                <VBox styleClass="form-container" 
+                      alignment="CENTER"
+                      maxWidth="400"
+                      spacing="15">
+                    <padding>
+                        <Insets top="30" right="40" bottom="30" left="40"/>
+                    </padding>
+                    
+                    <!-- Header with Theme Toggle -->
+                    <HBox alignment="CENTER">
+                        <children>
+                            <Label text="QuillPad" styleClass="app-title">
+                                <font>
+                                    <Font name="System Bold" size="28"/>
+                                </font>
+                            </Label>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Button fx:id="themeToggleButton" text="🌸"
+                                    styleClass="theme-toggle-button"
+                                    onAction="#handleThemeToggle"/>
+                        </children>
+                    </HBox>
+
+                    <!-- Subtitle -->
+                    <Label text="make sure your account is secure"
+                           styleClass="hint-label">
+                        <font>
+                            <Font size="12"/>
+                        </font>
+                    </Label>
+
+                    <!-- Username Field with Icon -->
+                    <HBox styleClass="input-field-container" alignment="CENTER_LEFT">
+                        <padding>
+                            <Insets right="10" left="15"/>
+                        </padding>
+                        <TextField fx:id="usernameField"
+                                   promptText="Enter your username"
+                                   styleClass="form-input"
+                                   HBox.hgrow="ALWAYS"/>
+                        <Label text="👤" styleClass="input-icon">
+                            <HBox.margin>
+                                <Insets left="5"/>
+                            </HBox.margin>
+                        </Label>
+                    </HBox>
+
+                    <!-- Password Field with Icon -->
+                    <HBox styleClass="input-field-container" alignment="CENTER_LEFT">
+                        <padding>
+                            <Insets right="10" left="15"/>
+                        </padding>
+                        <StackPane HBox.hgrow="ALWAYS">
+                            <PasswordField fx:id="passwordField"
+                                           promptText="Enter your password"
+                                           styleClass="form-input"
+                                           managed="true"
+                                           visible="true"/>
+                            <TextField fx:id="passwordTextField"
+                                       promptText="Enter your password"
+                                       styleClass="form-input"
+                                       managed="false"
+                                       visible="false"/>
+                        </StackPane>
+                        <Label text="🔒" styleClass="input-icon">
+                            <HBox.margin>
+                                <Insets left="5"/>
+                            </HBox.margin>
+                        </Label>
+                    </HBox>
+                    
+                    <!-- Show/Hide Password Toggle -->
+                    <HBox alignment="CENTER_LEFT">
+                        <children>
+                            <CheckBox fx:id="showPasswordCheckBox" 
+                                      text="Show Password"
+                                      styleClass="show-password-checkbox"
+                                      onAction="#handleShowPasswordToggle"/>
+                        </children>
+                    </HBox>
+
+                    <!-- Forgot Password / Register Links -->
+                    <HBox alignment="CENTER">
+                        <children>
+                            <Label text="Forgot Password?"
+                                   styleClass="hint-label link-label"
+                                   onMouseClicked="#handleForgotPassword"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Label text="Register"
+                                   styleClass="hint-label link-label"
+                                   onMouseClicked="#handleRegister"/>
+                        </children>
+                    </HBox>
+
+                    <!-- Error Label -->
+                    <Label fx:id="errorLabel"
+                           wrapText="true"
+                           styleClass="error-label"/>
+
+                    <!-- Login Button -->
+                    <Button fx:id="loginButton"
+                            maxWidth="Infinity"
+                            prefHeight="45"
+                            text="LOG IN"
+                            styleClass="login-button"
+                            onAction="#handleLogin">
+                        <font>
+                            <Font name="System Bold" size="14"/>
+                        </font>
+                    </Button>
+
+                    <!-- Register Button -->
+                    <Button fx:id="registerButton"
+                            maxWidth="Infinity"
+                            prefHeight="45"
+                            text="REGISTER"
+                            styleClass="register-button"
+                            onAction="#handleRegister">
+                        <font>
+                            <Font size="14"/>
+                        </font>
+                    </Button>
+
+                    <!-- Hint -->
+                    <Label text="Tip: Username must be 3+ characters"
+                           styleClass="hint-label">
+                        <font>
+                            <Font size="11"/>
+                        </font>
+                    </Label>
+                </VBox>
+            </children>
         </VBox>
+    </center>
 
-        <Button fx:id="loginButton" text="Login" onAction="#handleLogin" prefWidth="100"/>
-    </children>
-
-</VBox>
+</BorderPane>
