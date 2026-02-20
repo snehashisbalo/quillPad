@@ -10,6 +10,7 @@ org/quillpad/core/editor/SyntaxHighlighter.class
 org/quillpad/collab/ServerRunner.class
 org/quillpad/core/application/EditorTab$1.class
 org/quillpad/core/git/GitService$GitEvent.class
+org/openjfx/component/RichTextEditor$1.class
 org/quillpad/collab/ClientHandler.class
 org/openjfx/ThemeManager.class
 org/quillpad/core/application/TerminalPanel.class

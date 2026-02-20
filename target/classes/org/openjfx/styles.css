@@ -384,6 +384,18 @@
     -fx-font-size: 12px;
 }
 
+.formatting-toolbar {
+    -fx-background-color: #F8F9FA;
+    -fx-border-color: #E1E8ED;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 5 10;
+}
+
+.toolbar-label {
+    -fx-text-fill: #2C3E50;
+    -fx-font-size: 12px;
+}
+
 .version-label {
     -fx-text-fill: #95A5A6;
     -fx-font-size: 11px;

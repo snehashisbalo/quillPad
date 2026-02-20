@@ -6,8 +6,21 @@ import java.net.Socket;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.*;
 
 public class CollabServer {
+    private static final Logger logger = Logger.getLogger(CollabServer.class.getName());
+    
+    static {
+        try {
+            FileHandler fileHandler = new FileHandler("collab_server.log", true);
+            fileHandler.setFormatter(new SimpleFormatter());
+            logger.addHandler(fileHandler);
+            logger.setLevel(Level.ALL);
+        } catch (IOException e) {
+            System.err.println("Failed to create log file: " + e.getMessage());
+        }
+    }
     private static final int DEFAULT_PORT = 9999;
     private static final String DOCUMENTS_DIR = "collab_documents";
     
@@ -144,14 +157,17 @@ public class CollabServer {
     }
     
     void handleJoinDocument(String userId, String documentId, ClientHandler handler) {
+        logger.info("User " + userId + " attempting to join document: " + documentId);
+        
         Document doc = documents.get(documentId);
         if (doc == null) {
+            logger.warning("Document not found: " + documentId);
             handler.sendMessage(Message.error("Document not found: " + documentId));
             return;
         }
         
         String currentDoc = userDocuments.get(userId);
-        if (currentDoc != null) {
+        if (currentDoc != null && !currentDoc.equals(documentId)) {
             Set<String> currentUsers = documentUsers.get(currentDoc);
             if (currentUsers != null) {
                 currentUsers.remove(userId);
@@ -160,6 +176,8 @@ public class CollabServer {
         
         userDocuments.put(userId, documentId);
         documentUsers.computeIfAbsent(documentId, k -> ConcurrentHashMap.newKeySet()).add(userId);
+        
+        logger.info("User " + userId + " joined document " + documentId + ". Current users: " + documentUsers.get(documentId));
         
         handler.sendMessage(Message.documentSync(doc));
         broadcastUserList(documentId);
@@ -265,22 +283,27 @@ public class CollabServer {
     
     private void broadcastDocumentUpdate(String documentId, Document doc, String excludeUserId) {
         Set<String> users = documentUsers.get(documentId);
+        logger.info("Broadcasting update for doc: " + documentId + " to users: " + users + " (excluding: " + excludeUserId + ")");
         System.out.println("Broadcasting update for doc: " + documentId + " to users: " + users + " (excluding: " + excludeUserId + ")");
-        if (users != null) {
-            Message updateMsg = Message.documentUpdate(null, documentId, doc);
-            for (String user : users) {
-                if (!user.equals(excludeUserId)) {
-                    ClientHandler handler = clients.get(user);
-                    if (handler != null) {
-                        System.out.println("Sending update to user: " + user);
-                        handler.sendMessage(updateMsg);
-                    } else {
-                        System.out.println("No handler found for user: " + user);
-                    }
+        
+        if (users == null || users.isEmpty()) {
+            logger.warning("No users found for document: " + documentId);
+            return;
+        }
+        
+        Message updateMsg = Message.documentUpdate(null, documentId, doc);
+        
+        for (String user : users) {
+            if (!user.equals(excludeUserId)) {
+                ClientHandler handler = clients.get(user);
+                if (handler != null) {
+                    logger.info("Sending update to user: " + user);
+                    System.out.println("Sending update to user: " + user);
+                    handler.sendMessage(updateMsg);
+                } else {
+                    logger.warning("No handler found for user: " + user);
                 }
             }
-        } else {
-            System.out.println("No users found for document: " + documentId);
         }
     }
     

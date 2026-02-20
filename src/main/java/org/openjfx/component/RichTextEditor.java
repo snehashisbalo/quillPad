@@ -1,6 +1,7 @@
 package org.openjfx.component;
 
 import org.fxmisc.richtext.InlineCssTextArea;
+import org.openjfx.ThemeManager;
 import org.quillpad.collab.Document;
 
 import javafx.scene.layout.StackPane;
@@ -13,6 +14,8 @@ public class RichTextEditor extends StackPane {
     private String documentName;
     private String filePath;
     private boolean modified;
+    private String currentBgColor = "#ffffff";
+    private String currentTextColor = "#2C3E50";
     
     public RichTextEditor() {
         this.textArea = new InlineCssTextArea();
@@ -26,7 +29,47 @@ public class RichTextEditor extends StackPane {
         });
         
         getChildren().add(textArea);
-        setStyle("-fx-background-color: #1e1e2e;");
+        applyThemeColors();
+    }
+    
+    private void applyThemeColors() {
+        ThemeManager.Theme theme = ThemeManager.getCurrentTheme();
+        switch (theme) {
+            case DARK:
+                currentBgColor = "#1e1e1e";
+                currentTextColor = "#d4d4d4";
+                break;
+            case CATPPUCCIN:
+                currentBgColor = "#1e1e2e";
+                currentTextColor = "#cdd6f4";
+                break;
+            case TOKYO_NIGHT:
+                currentBgColor = "#1a1b26";
+                currentTextColor = "#a9b1d6";
+                break;
+            case LIGHT:
+            default:
+                currentBgColor = "#ffffff";
+                currentTextColor = "#2C3E50";
+                break;
+        }
+        setStyle("-fx-background-color: " + currentBgColor + ";");
+        updateTextAreaStyle();
+    }
+    
+    private void updateTextAreaStyle() {
+        String currentStyle = textArea.getStyle();
+        currentStyle = currentStyle.replaceAll("-fx-fill: [^;]+;", "");
+        currentStyle = currentStyle + "-fx-fill: " + currentTextColor + ";";
+        textArea.setStyle(currentStyle);
+    }
+    
+    public void updateTheme() {
+        applyThemeColors();
+    }
+    
+    public String getBackgroundHex() {
+        return currentBgColor;
     }
     
     public InlineCssTextArea getTextArea() {
@@ -44,8 +87,8 @@ public class RichTextEditor extends StackPane {
     }
     
     public void setFont(Font font) {
-        String style = String.format("-fx-font-family: \"%s\"; -fx-font-size: %.0fpx;", 
-                font.getFamily(), font.getSize());
+        String style = String.format("-fx-font-family: \"%s\"; -fx-font-size: %.0fpx; -fx-fill: %s;", 
+                font.getFamily(), font.getSize(), currentTextColor);
         textArea.setStyle(style);
     }
     

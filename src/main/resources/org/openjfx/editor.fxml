@@ -60,6 +60,7 @@
                             <MenuItem fx:id="joinDocumentMenuItem" text="Join Document..." disable="true"/>
                             <MenuItem fx:id="leaveDocumentMenuItem" text="Leave Document" disable="true"/>
                             <SeparatorMenuItem/>
+                            <MenuItem fx:id="refreshFromServerMenuItem" text="Refresh from Server (Ctrl+U)" disable="true"/>
                             <MenuItem fx:id="showUsersMenuItem" text="Show Active Users" disable="true"/>
                         </items>
                     </Menu>

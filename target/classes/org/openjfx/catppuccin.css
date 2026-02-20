@@ -310,6 +310,15 @@
     -fx-text-fill: -fx-cat-subtext1;
 }
 
+.catppuccin-theme .formatting-toolbar {
+    -fx-background-color: -fx-cat-mantle;
+    -fx-border-color: -fx-cat-surface0;
+}
+
+.catppuccin-theme .toolbar-label {
+    -fx-text-fill: -fx-cat-text;
+}
+
 .catppuccin-theme .version-label {
     -fx-text-fill: -fx-cat-overlay0;
 }

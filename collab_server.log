@@ -1,0 +1,496 @@
+Feb 20, 2026 1:30:35 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: dda10aa8-def3-47dd-8a06-4726ed90c645
+Feb 20, 2026 1:30:35 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document dda10aa8-def3-47dd-8a06-4726ed90c645. Current users: [asad]
+Feb 20, 2026 1:31:04 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User yta attempting to join document: dda10aa8-def3-47dd-8a06-4726ed90c645
+Feb 20, 2026 1:31:04 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User yta joined document dda10aa8-def3-47dd-8a06-4726ed90c645. Current users: [yta, asad]
+Feb 20, 2026 1:35:46 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [asad] (excluding: asad)
+Feb 20, 2026 1:36:15 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User yta attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 1:36:15 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User yta joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 1:36:27 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 1:36:27 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 1:36:40 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: asad)
+Feb 20, 2026 1:36:40 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: yta
+Feb 20, 2026 1:36:47 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: asad)
+Feb 20, 2026 1:36:47 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: yta
+Feb 20, 2026 1:36:47 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: asad)
+Feb 20, 2026 1:36:47 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: yta
+Feb 20, 2026 1:37:05 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 1:37:05 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 1:37:17 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: asad)
+Feb 20, 2026 1:37:17 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: yta
+Feb 20, 2026 1:41:27 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 1:41:27 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [asad]
+Feb 20, 2026 1:41:33 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [asad] (excluding: asad)
+Feb 20, 2026 1:41:33 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [asad] (excluding: asad)
+Feb 20, 2026 1:41:33 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [asad] (excluding: asad)
+Feb 20, 2026 1:41:34 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [asad] (excluding: asad)
+Feb 20, 2026 1:41:34 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [asad] (excluding: asad)
+Feb 20, 2026 1:41:34 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [asad] (excluding: asad)
+Feb 20, 2026 1:41:34 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [asad] (excluding: asad)
+Feb 20, 2026 1:41:35 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [asad] (excluding: asad)
+Feb 20, 2026 1:41:35 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [asad] (excluding: asad)
+Feb 20, 2026 1:41:36 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [asad] (excluding: asad)
+Feb 20, 2026 1:41:36 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [asad] (excluding: asad)
+Feb 20, 2026 1:41:36 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [asad] (excluding: asad)
+Feb 20, 2026 1:41:38 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [asad] (excluding: asad)
+Feb 20, 2026 1:42:09 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User yta attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 1:42:09 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User yta joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 1:42:15 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 1:42:15 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 1:42:16 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 1:42:16 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 1:42:18 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 1:42:18 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 1:42:21 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 1:42:21 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 1:42:22 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 1:42:22 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 1:42:28 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 1:42:28 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 1:42:32 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 1:42:32 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 1:42:34 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 1:42:34 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 1:42:37 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 1:42:37 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 1:42:38 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 1:42:38 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 1:42:39 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 1:42:39 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 1:42:41 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 1:42:41 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 1:42:42 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 1:42:42 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 1:42:44 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 1:42:44 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 1:42:45 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 1:42:45 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 1:42:47 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 1:42:47 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 1:42:51 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 1:42:51 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 1:43:06 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 1:43:06 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 1:43:12 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 1:43:12 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 2:02:30 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User yta attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 2:02:30 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User yta joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta]
+Feb 20, 2026 2:02:43 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta] (excluding: yta)
+Feb 20, 2026 2:02:49 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta] (excluding: yta)
+Feb 20, 2026 2:03:05 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 2:03:05 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 2:03:23 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: asad)
+Feb 20, 2026 2:03:23 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: yta
+Feb 20, 2026 2:03:24 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: asad)
+Feb 20, 2026 2:03:24 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: yta
+Feb 20, 2026 2:03:39 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: asad)
+Feb 20, 2026 2:03:39 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: yta
+Feb 20, 2026 2:04:08 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User yta attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 2:04:08 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User yta joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:41:37 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:41:38 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [asad]
+Feb 20, 2026 4:41:48 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [asad] (excluding: asad)
+Feb 20, 2026 4:41:51 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:41:51 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [asad]
+Feb 20, 2026 4:41:53 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:41:53 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [asad]
+Feb 20, 2026 4:42:22 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User yta attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:42:22 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User yta joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:42:37 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 4:42:37 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 4:42:38 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 4:42:38 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 4:42:42 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:42:42 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:42:44 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:42:44 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:42:44 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:42:44 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:42:44 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:42:44 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:42:45 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:42:45 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:42:45 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:42:45 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:42:45 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:42:45 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:42:52 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: asad)
+Feb 20, 2026 4:42:52 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: yta
+Feb 20, 2026 4:42:55 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: asad)
+Feb 20, 2026 4:42:55 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: yta
+Feb 20, 2026 4:42:56 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: asad)
+Feb 20, 2026 4:42:56 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: yta
+Feb 20, 2026 4:42:56 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: asad)
+Feb 20, 2026 4:42:56 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: yta
+Feb 20, 2026 4:42:56 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: asad)
+Feb 20, 2026 4:42:56 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: yta
+Feb 20, 2026 4:42:57 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: asad)
+Feb 20, 2026 4:42:57 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: yta
+Feb 20, 2026 4:42:57 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: asad)
+Feb 20, 2026 4:42:57 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: yta
+Feb 20, 2026 4:42:57 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: asad)
+Feb 20, 2026 4:42:57 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: yta
+Feb 20, 2026 4:42:57 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: asad)
+Feb 20, 2026 4:42:57 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: yta
+Feb 20, 2026 4:42:57 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: asad)
+Feb 20, 2026 4:42:57 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: yta
+Feb 20, 2026 4:42:57 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: asad)
+Feb 20, 2026 4:42:57 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: yta
+Feb 20, 2026 4:42:59 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:42:59 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:00 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:00 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:00 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:00 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:00 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:00 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:01 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:01 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:01 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:01 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:01 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:01 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:02 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:02 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:03 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:03 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:03 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:03 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:03 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:03 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:03 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:03 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:03 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:03 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:03 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:03 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:04 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:04 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:04 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:04 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:04 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:04 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:04 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:04 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:05 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:05 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:05 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:05 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:05 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:05 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:05 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:05 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:05 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:05 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:05 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:05 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:06 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:06 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 4:43:06 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 4:43:06 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 10:43:56 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: dda10aa8-def3-47dd-8a06-4726ed90c645
+Feb 20, 2026 10:43:56 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document dda10aa8-def3-47dd-8a06-4726ed90c645. Current users: [asad]
+Feb 20, 2026 10:44:05 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: dda10aa8-def3-47dd-8a06-4726ed90c645 to users: [asad] (excluding: asad)
+Feb 20, 2026 10:44:07 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: dda10aa8-def3-47dd-8a06-4726ed90c645 to users: [asad] (excluding: asad)
+Feb 20, 2026 10:44:08 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: dda10aa8-def3-47dd-8a06-4726ed90c645
+Feb 20, 2026 10:44:08 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document dda10aa8-def3-47dd-8a06-4726ed90c645. Current users: [asad]
+Feb 20, 2026 10:44:15 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: dda10aa8-def3-47dd-8a06-4726ed90c645 to users: [asad] (excluding: asad)
+Feb 20, 2026 10:45:40 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User yta attempting to join document: 44e35f01-18f9-435b-9c42-a0848d74c35b
+Feb 20, 2026 10:45:40 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User yta joined document 44e35f01-18f9-435b-9c42-a0848d74c35b. Current users: [yta]
+Feb 20, 2026 10:45:52 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 44e35f01-18f9-435b-9c42-a0848d74c35b to users: [yta] (excluding: yta)
+Feb 20, 2026 10:47:58 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: dda10aa8-def3-47dd-8a06-4726ed90c645 to users: [asad] (excluding: asad)
+Feb 20, 2026 10:48:06 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: dda10aa8-def3-47dd-8a06-4726ed90c645
+Feb 20, 2026 10:48:06 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document dda10aa8-def3-47dd-8a06-4726ed90c645. Current users: [asad]
+Feb 20, 2026 10:48:08 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: dda10aa8-def3-47dd-8a06-4726ed90c645
+Feb 20, 2026 10:48:08 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document dda10aa8-def3-47dd-8a06-4726ed90c645. Current users: [asad]
+Feb 20, 2026 10:48:15 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: dda10aa8-def3-47dd-8a06-4726ed90c645 to users: [asad] (excluding: asad)
+Feb 20, 2026 10:48:16 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: dda10aa8-def3-47dd-8a06-4726ed90c645 to users: [asad] (excluding: asad)
+Feb 20, 2026 10:48:21 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: dda10aa8-def3-47dd-8a06-4726ed90c645 to users: [asad] (excluding: asad)
+Feb 20, 2026 10:48:23 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: dda10aa8-def3-47dd-8a06-4726ed90c645 to users: [asad] (excluding: asad)
+Feb 20, 2026 10:48:24 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: dda10aa8-def3-47dd-8a06-4726ed90c645 to users: [asad] (excluding: asad)
+Feb 20, 2026 10:48:24 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: dda10aa8-def3-47dd-8a06-4726ed90c645 to users: [asad] (excluding: asad)
+Feb 20, 2026 10:48:24 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: dda10aa8-def3-47dd-8a06-4726ed90c645 to users: [asad] (excluding: asad)
+Feb 20, 2026 10:48:24 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: dda10aa8-def3-47dd-8a06-4726ed90c645 to users: [asad] (excluding: asad)
+Feb 20, 2026 10:48:25 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: dda10aa8-def3-47dd-8a06-4726ed90c645 to users: [asad] (excluding: asad)
+Feb 20, 2026 10:48:25 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: dda10aa8-def3-47dd-8a06-4726ed90c645 to users: [asad] (excluding: asad)
+Feb 20, 2026 10:48:25 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: dda10aa8-def3-47dd-8a06-4726ed90c645 to users: [asad] (excluding: asad)
+Feb 20, 2026 10:48:25 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: dda10aa8-def3-47dd-8a06-4726ed90c645 to users: [asad] (excluding: asad)
+Feb 20, 2026 11:23:50 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 11:23:50 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [asad]
+Feb 20, 2026 11:25:29 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User yta attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 11:25:29 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User yta joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 11:26:02 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 11:26:02 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 11:26:18 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 11:26:18 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 11:26:22 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 11:26:22 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 11:26:23 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 11:26:23 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 11:26:23 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 11:26:23 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 11:26:24 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 11:26:24 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 11:26:30 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 11:26:30 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 11:26:31 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 11:26:31 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 11:26:47 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 11:26:47 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 11:27:07 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: asad)
+Feb 20, 2026 11:27:07 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: yta
+Feb 20, 2026 11:27:16 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad attempting to join document: 627797b3-e4dd-40f5-957c-82b6183713a9
+Feb 20, 2026 11:27:16 PM org.quillpad.collab.CollabServer handleJoinDocument
+INFO: User asad joined document 627797b3-e4dd-40f5-957c-82b6183713a9. Current users: [yta, asad]
+Feb 20, 2026 11:27:22 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 11:27:22 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 11:27:23 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: yta)
+Feb 20, 2026 11:27:23 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: asad
+Feb 20, 2026 11:27:34 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Broadcasting update for doc: 627797b3-e4dd-40f5-957c-82b6183713a9 to users: [yta, asad] (excluding: asad)
+Feb 20, 2026 11:27:34 PM org.quillpad.collab.CollabServer broadcastDocumentUpdate
+INFO: Sending update to user: yta

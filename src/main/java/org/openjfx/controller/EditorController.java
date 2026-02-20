@@ -65,6 +65,7 @@ public class EditorController implements Initializable {
     @FXML private MenuItem joinDocumentMenuItem;
     @FXML private MenuItem leaveDocumentMenuItem;
     @FXML private MenuItem showUsersMenuItem;
+    @FXML private MenuItem refreshFromServerMenuItem;
 
     @FXML private ComboBox<String> fontFamilyCombo;
     @FXML private ComboBox<Integer> fontSizeCombo;
@@ -244,6 +245,10 @@ public class EditorController implements Initializable {
         if (showUsersMenuItem != null) {
             showUsersMenuItem.setOnAction(this::handleShowUsers);
         }
+        if (refreshFromServerMenuItem != null) {
+            refreshFromServerMenuItem.setAccelerator(new KeyCodeCombination(KeyCode.U, KeyCombination.CONTROL_DOWN));
+            refreshFromServerMenuItem.setOnAction(this::handleRefreshFromServer);
+        }
     }
 
     private void setupToolbarListeners() {
@@ -257,6 +262,12 @@ public class EditorController implements Initializable {
         
         textColorPicker.setOnAction(e -> applyTextColor());
         highlightColorPicker.setOnAction(e -> applyHighlight());
+    }
+    
+    public void onThemeChanged() {
+        for (RichTextEditor editor : tabEditorMap.values()) {
+            editor.updateTheme();
+        }
     }
 
     private void createNewTab(String title) {
@@ -435,7 +446,7 @@ public class EditorController implements Initializable {
 
         // Handle collaborative documents
         if (filePath != null && filePath.startsWith("collab:")) {
-            String docId = filePath.substring(6);
+            String docId = filePath.substring(7);
             Document doc = editor.toDocument();
             doc.setDocumentId(docId);
             doc.setDocumentName(tabTitle);
@@ -995,22 +1006,31 @@ public class EditorController implements Initializable {
                     Tab existingTab = findTabByDocumentId(docId);
                     
                     if (existingTab != null) {
-                        // Update existing tab - set flag to prevent loops
-                        tabPane.getSelectionModel().select(existingTab);
                         RichTextEditor editor = tabEditorMap.get(existingTab);
                         
-                        isReceivingUpdate = true;
-                        editor.fromDocument(doc);
-                        isReceivingUpdate = false;
+                        // Check if user has local unsaved changes
+                        boolean hasLocalChanges = isTabModified(existingTab);
                         
-                        markTabModified(existingTab, false);
-                        
-                        // Show notification if change is from another user
-                        if (!isFromMe) {
-                            fileStatusLabel.setText("Updated by: " + senderId);
-                            showNotification("Document Updated", docName + " was updated by " + senderId);
+                        if (hasLocalChanges) {
+                            // User has local changes - ask what to do
+                            if (!isFromMe) {
+                                showNotification("Changes Available", docName + " was updated by " + senderId);
+                            }
                         } else {
-                            fileStatusLabel.setText("Synced: " + docName);
+                            // No local changes - auto-apply
+                            tabPane.getSelectionModel().select(existingTab);
+                            
+                            isReceivingUpdate = true;
+                            editor.fromDocument(doc);
+                            isReceivingUpdate = false;
+                            
+                            markTabModified(existingTab, false);
+                            
+                            if (!isFromMe) {
+                                fileStatusLabel.setText("Updated by: " + senderId);
+                            } else {
+                                fileStatusLabel.setText("Synced: " + docName);
+                            }
                         }
                     } else {
                         // Create new tab for this document
@@ -1040,7 +1060,7 @@ public class EditorController implements Initializable {
                     }
                     
                     if (isFromMe) {
-                        fileStatusLabel.setText("Synced: " + docName);
+                        fileStatusLabel.setText("Saved & synced: " + docName);
                     }
                 }
                 break;
@@ -1084,18 +1104,10 @@ public class EditorController implements Initializable {
         });
 
         editor.getTextArea().textProperty().addListener((obs, oldText, newText) -> {
-            // Don't send updates if we're receiving a remote update
-            if (isReceivingUpdate) {
-                return;
-            }
-            
+            // Only mark as modified - don't send updates automatically
+            // Updates will only be sent when user explicitly saves
             markTabModified(tab, true);
             updateStatus(editor, editor.getCaretPosition());
-
-            if (isCollaborating && oldText != null && !oldText.equals(newText)) {
-                System.out.println("Sending document update...");
-                sendDocumentUpdate();
-            }
         });
 
         tab.setOnCloseRequest(event -> {
@@ -1122,6 +1134,7 @@ public class EditorController implements Initializable {
             createCollabDocMenuItem.setDisable(false);
             joinDocumentMenuItem.setDisable(false);
             showUsersMenuItem.setDisable(false);
+            refreshFromServerMenuItem.setDisable(false);
 
             if (collabClient.getCurrentDocumentId() != null) {
                 leaveDocumentMenuItem.setDisable(false);
@@ -1133,6 +1146,7 @@ public class EditorController implements Initializable {
             joinDocumentMenuItem.setDisable(true);
             leaveDocumentMenuItem.setDisable(true);
             showUsersMenuItem.setDisable(true);
+            refreshFromServerMenuItem.setDisable(true);
             connectionStatusLabel.setText("Offline");
             connectionStatusLabel.setStyle("-fx-text-fill: #ff5555;");
         }
@@ -1216,6 +1230,19 @@ public class EditorController implements Initializable {
         }
     }
 
+    @FXML private void handleRefreshFromServer(ActionEvent event) {
+        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
+        if (selectedTab != null) {
+            String filePath = tabFilePathMap.get(selectedTab);
+            if (filePath != null && filePath.startsWith("collab:")) {
+                String docId = filePath.substring(7);
+                // Request fresh copy from server
+                collabClient.joinDocument(docId);
+                fileStatusLabel.setText("Refreshing from server...");
+            }
+        }
+    }
+
     private void sendDocumentUpdate() {
         if (collabClient != null && isCollaborating) {
             Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
@@ -1226,7 +1253,7 @@ public class EditorController implements Initializable {
                 // Get the document ID from the file path (for collaborative docs)
                 String filePath = tabFilePathMap.get(selectedTab);
                 if (filePath != null && filePath.startsWith("collab:")) {
-                    doc.setDocumentId(filePath.substring(6));
+                    doc.setDocumentId(filePath.substring(7));
                 }
                 
                 collabClient.updateDocument(doc);
