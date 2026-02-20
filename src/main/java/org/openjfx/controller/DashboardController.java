@@ -68,6 +68,15 @@ public class DashboardController implements Initializable {
         if (welcomeLabel != null) {
             welcomeLabel.setText("Welcome back, " + username + "!");
         }
+        // Set user-specific notes directory
+        if (username != null) {
+            notesDir = new File("notes/" + username);
+            if (!notesDir.exists()) {
+                notesDir.mkdirs();
+            }
+            loadRecentProjects();
+            updateStats();
+        }
     }
 
     @Override
@@ -190,7 +199,7 @@ public class DashboardController implements Initializable {
 
             Optional<ButtonType> result = alert.showAndWait();
             if (result.isPresent() && result.get() == ButtonType.OK) {
-                File fileToDelete = new File("notes/" + selectedNote + ".txt");
+                File fileToDelete = new File(notesDir, selectedNote + ".txt");
                 if (fileToDelete.delete()) {
                     loadRecentProjects();
                     updateStats();

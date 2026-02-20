@@ -10,13 +10,14 @@
     <packaging>jar</packaging>
 
     <name>QuillPad IDE</name>
-    <description>A modern JavaFX IDE</description>
+    <description>A modern JavaFX IDE with real-time collaboration</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <javafx.version>25.0.2</javafx.version>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <javafx.version>21.0.2</javafx.version>
+        <richtextfx.version>0.11.2</richtextfx.version>
     </properties>
 
     <dependencies>
@@ -40,15 +41,17 @@
             <artifactId>javafx-swing</artifactId>
             <version>${javafx.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit</artifactId>
             <version>6.7.0.202309050840-r</version>
         </dependency>
+
         <dependency>
             <groupId>org.fxmisc.richtext</groupId>
             <artifactId>richtextfx</artifactId>
-            <version>0.11.2</version>
+            <version>${richtextfx.version}</version>
         </dependency>
     </dependencies>
 

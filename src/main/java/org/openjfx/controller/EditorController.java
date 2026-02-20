@@ -1,108 +1,98 @@
 package org.openjfx.controller;
 
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
 import javafx.scene.control.*;
+import javafx.scene.control.Alert;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
+import javafx.stage.Modality;
 import org.openjfx.QuillPad;
 import org.openjfx.SettingsManager;
+import org.openjfx.component.RichTextEditor;
+import org.quillpad.collab.CollabClient;
+import org.quillpad.collab.Document;
+import org.quillpad.collab.Message;
 
 import java.io.*;
 import java.net.URL;
 import java.util.*;
+import java.util.Timer;
 
 public class EditorController implements Initializable {
 
-    @FXML
-    private TabPane tabPane;
+    @FXML private TabPane tabPane;
+    @FXML private Label lineLabel;
+    @FXML private Label columnLabel;
+    @FXML private Label wordCountLabel;
+    @FXML private Label charCountLabel;
+    @FXML private Label fileStatusLabel;
+    @FXML private Label connectionStatusLabel;
+    @FXML private Label collabStatusLabel;
 
-    @FXML
-    private Label lineLabel;
+    @FXML private MenuItem newMenuItem;
+    @FXML private MenuItem openMenuItem;
+    @FXML private MenuItem saveMenuItem;
+    @FXML private MenuItem saveAsMenuItem;
+    @FXML private MenuItem closeMenuItem;
+    @FXML private MenuItem undoMenuItem;
+    @FXML private MenuItem redoMenuItem;
+    @FXML private MenuItem cutMenuItem;
+    @FXML private MenuItem copyMenuItem;
+    @FXML private MenuItem pasteMenuItem;
+    @FXML private MenuItem selectAllMenuItem;
+    @FXML private MenuItem findMenuItem;
+    @FXML private MenuItem replaceMenuItem;
+    @FXML private CheckMenuItem wordWrapMenuItem;
+    @FXML private MenuItem aboutMenuItem;
+    @FXML private MenuItem increaseFontMenuItem;
+    @FXML private MenuItem decreaseFontMenuItem;
+    @FXML private MenuItem resetFontMenuItem;
 
-    @FXML
-    private Label columnLabel;
+    @FXML private MenuItem connectMenuItem;
+    @FXML private MenuItem disconnectMenuItem;
+    @FXML private MenuItem createCollabDocMenuItem;
+    @FXML private MenuItem joinDocumentMenuItem;
+    @FXML private MenuItem leaveDocumentMenuItem;
+    @FXML private MenuItem showUsersMenuItem;
 
-    @FXML
-    private Label wordCountLabel;
-
-    @FXML
-    private Label charCountLabel;
-
-    @FXML
-    private Label fileStatusLabel;
-
-    @FXML
-    private MenuItem newMenuItem;
-
-    @FXML
-    private MenuItem openMenuItem;
-
-    @FXML
-    private MenuItem saveMenuItem;
-
-    @FXML
-    private MenuItem saveAsMenuItem;
-
-    @FXML
-    private MenuItem closeMenuItem;
-
-    @FXML
-    private MenuItem undoMenuItem;
-
-    @FXML
-    private MenuItem redoMenuItem;
-
-    @FXML
-    private MenuItem cutMenuItem;
-
-    @FXML
-    private MenuItem copyMenuItem;
-
-    @FXML
-    private MenuItem pasteMenuItem;
-
-    @FXML
-    private MenuItem selectAllMenuItem;
-
-    @FXML
-    private MenuItem findMenuItem;
-
-    @FXML
-    private MenuItem replaceMenuItem;
-
-    @FXML
-    private CheckMenuItem wordWrapMenuItem;
-
-    @FXML
-    private MenuItem aboutMenuItem;
-
-    @FXML
-    private MenuItem increaseFontMenuItem;
-
-    @FXML
-    private MenuItem decreaseFontMenuItem;
-
-    @FXML
-    private MenuItem resetFontMenuItem;
+    @FXML private ComboBox<String> fontFamilyCombo;
+    @FXML private ComboBox<Integer> fontSizeCombo;
+    @FXML private ToggleButton boldButton;
+    @FXML private ToggleButton italicButton;
+    @FXML private ToggleButton underlineButton;
+    @FXML private ToggleButton strikethroughButton;
+    @FXML private ColorPicker textColorPicker;
+    @FXML private ColorPicker highlightColorPicker;
 
     private QuillPad mainApp;
-    private String currentNoteName;
     private String currentUser;
+    private String currentNoteName;
+    private Map<Tab, RichTextEditor> tabEditorMap = new HashMap<>();
     private Map<Tab, Boolean> tabModifiedMap = new HashMap<>();
     private Map<Tab, String> tabFilePathMap = new HashMap<>();
-    private Map<Tab, Stack<String>> undoStackMap = new HashMap<>();
-    private Map<Tab, Stack<String>> redoStackMap = new HashMap<>();
     private Timer autoSaveTimer;
     private int untitledCounter = 1;
+
+    private CollabClient collabClient;
+    private boolean isCollaborating = false;
+    private boolean isReceivingUpdate = false;
+
+    private static final String[] FONT_FAMILIES = {
+        "System", "Arial", "Times New Roman", "Courier New", "Consolas", 
+        "Verdana", "Georgia", "Comic Sans MS", "Trebuchet MS", "Lucida Console"
+    };
+    private static final Integer[] FONT_SIZES = {8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 72};
 
     public void setMainApp(QuillPad mainApp) {
         this.mainApp = mainApp;
@@ -123,12 +113,16 @@ public class EditorController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        setupFontCombos();
         setupKeyboardShortcuts();
+        setupToolbarListeners();
 
         tabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             if (newTab != null) {
-                TextArea textArea = (TextArea) newTab.getContent();
-                updateStatus(textArea, textArea.getCaretPosition());
+                RichTextEditor editor = tabEditorMap.get(newTab);
+                if (editor != null) {
+                    updateStatus(editor, editor.getCaretPosition());
+                }
             }
         });
 
@@ -138,19 +132,26 @@ public class EditorController implements Initializable {
             while (c.next()) {
                 if (c.wasRemoved()) {
                     for (Tab removedTab : c.getRemoved()) {
+                        tabEditorMap.remove(removedTab);
                         tabModifiedMap.remove(removedTab);
                         tabFilePathMap.remove(removedTab);
-                        undoStackMap.remove(removedTab);
-                        redoStackMap.remove(removedTab);
                     }
                 }
             }
-            // Auto-return to dashboard when no tabs are open
             if (tabPane.getTabs().isEmpty() && mainApp != null) {
                 mainApp.showDashboard(currentUser);
             }
         });
+    }
 
+    private void setupFontCombos() {
+        ObservableList<String> families = FXCollections.observableArrayList(FONT_FAMILIES);
+        fontFamilyCombo.setItems(families);
+        fontFamilyCombo.setValue(SettingsManager.getFontFamily());
+
+        ObservableList<Integer> sizes = FXCollections.observableArrayList(FONT_SIZES);
+        fontSizeCombo.setItems(sizes);
+        fontSizeCombo.setValue(SettingsManager.getFontSize());
     }
 
     private void setupKeyboardShortcuts() {
@@ -213,7 +214,6 @@ public class EditorController implements Initializable {
         if (aboutMenuItem != null) {
             aboutMenuItem.setOnAction(this::handleAbout);
         }
-        // Font size shortcuts
         if (increaseFontMenuItem != null) {
             increaseFontMenuItem.setAccelerator(new KeyCodeCombination(KeyCode.EQUALS, KeyCombination.CONTROL_DOWN));
             increaseFontMenuItem.setOnAction(this::handleIncreaseFont);
@@ -225,66 +225,78 @@ public class EditorController implements Initializable {
         if (resetFontMenuItem != null) {
             resetFontMenuItem.setOnAction(this::handleResetFont);
         }
+
+        if (connectMenuItem != null) {
+            connectMenuItem.setOnAction(this::handleConnect);
+        }
+        if (disconnectMenuItem != null) {
+            disconnectMenuItem.setOnAction(this::handleDisconnect);
+        }
+        if (createCollabDocMenuItem != null) {
+            createCollabDocMenuItem.setOnAction(this::handleCreateCollabDoc);
+        }
+        if (joinDocumentMenuItem != null) {
+            joinDocumentMenuItem.setOnAction(this::handleJoinDocument);
+        }
+        if (leaveDocumentMenuItem != null) {
+            leaveDocumentMenuItem.setOnAction(this::handleLeaveDocument);
+        }
+        if (showUsersMenuItem != null) {
+            showUsersMenuItem.setOnAction(this::handleShowUsers);
+        }
     }
 
-    private void setupTab(Tab tab) {
-        TextArea textArea = null;
+    private void setupToolbarListeners() {
+        fontFamilyCombo.setOnAction(e -> applyFontFamily());
+        fontSizeCombo.setOnAction(e -> applyFontSize());
+        
+        boldButton.setOnAction(e -> applyBold());
+        italicButton.setOnAction(e -> applyItalic());
+        underlineButton.setOnAction(e -> applyUnderline());
+        strikethroughButton.setOnAction(e -> applyStrikethrough());
+        
+        textColorPicker.setOnAction(e -> applyTextColor());
+        highlightColorPicker.setOnAction(e -> applyHighlight());
+    }
 
-        if (tab.getContent() instanceof TextArea) {
-            textArea = (TextArea) tab.getContent();
+    private void createNewTab(String title) {
+        String tabTitle;
+        if (title == null || title.isEmpty() || title.equals("Untitled")) {
+            tabTitle = "Untitled-" + untitledCounter++;
         } else {
-            textArea = new TextArea();
-            textArea.setWrapText(wordWrapMenuItem != null && wordWrapMenuItem.isSelected());
-            textArea.setStyle("-fx-background-color: transparent; -fx-control-inner-background: transparent; -fx-border-color: transparent;");
-            // Set default font
-            textArea.setFont(Font.font(SettingsManager.getFontFamily(), SettingsManager.getFontSize()));
-            tab.setContent(textArea);
+            tabTitle = title;
         }
 
-        undoStackMap.put(tab, new Stack<>());
-        redoStackMap.put(tab, new Stack<>());
+        Tab tab = new Tab(tabTitle);
+        RichTextEditor editor = new RichTextEditor();
+        editor.setDocumentName(tabTitle);
+        editor.setWrapText(wordWrapMenuItem != null && wordWrapMenuItem.isSelected());
+        editor.setFont(Font.font(SettingsManager.getFontFamily(), SettingsManager.getFontSize()));
+
+        tab.setContent(editor);
+        tabEditorMap.put(tab, editor);
         tabModifiedMap.put(tab, false);
 
-        final TextArea finalTextArea = textArea;
+        tabPane.getTabs().add(tab);
+        tabPane.getSelectionModel().select(tab);
 
-        // Add key filter to prevent Ctrl+H from deleting text
-        textArea.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-            if (event.getCode() == KeyCode.H && event.isControlDown()) {
-                event.consume();
-                handleReplace(null);
+        setupTabListeners(tab, editor);
+    }
+
+    private void setupTabListeners(Tab tab, RichTextEditor editor) {
+        editor.getTextArea().caretPositionProperty().addListener((caretObs, oldPos, newPos) -> {
+            updateStatus(editor, newPos.intValue());
+            if (isCollaborating) {
+                collabClient.sendCursorPosition(newPos.intValue());
             }
         });
 
-        // Add font size shortcuts
-        textArea.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
-            if (event.isControlDown()) {
-                if (event.getCode() == KeyCode.EQUALS || event.getCode() == KeyCode.PLUS) {
-                    event.consume();
-                    handleIncreaseFont(null);
-                } else if (event.getCode() == KeyCode.MINUS) {
-                    event.consume();
-                    handleDecreaseFont(null);
-                } else if (event.getCode() == KeyCode.DIGIT0) {
-                    event.consume();
-                    handleResetFont(null);
-                }
-            }
-        });
-
-        textArea.caretPositionProperty().addListener((caretObs, oldPos, newPos) -> {
-            updateStatus(finalTextArea, newPos.intValue());
-        });
-
-        textArea.textProperty().addListener((obs, oldText, newText) -> {
+        editor.getTextArea().textProperty().addListener((obs, oldText, newText) -> {
             markTabModified(tab, true);
-            updateStatus(finalTextArea, finalTextArea.getCaretPosition());
+            updateStatus(editor, editor.getCaretPosition());
 
-            Stack<String> undoStack = undoStackMap.get(tab);
-            if (undoStack != null && oldText != null) {
-                undoStack.push(oldText);
-                if (undoStack.size() > 100) {
-                    undoStack.remove(0);
-                }
+            if (isCollaborating) {
+                sendDocumentUpdate();
             }
         });
 
@@ -297,11 +309,11 @@ public class EditorController implements Initializable {
             }
         });
 
-        updateStatus(textArea, 0);
+        updateStatus(editor, 0);
     }
 
-    private void updateStatus(TextArea textArea, int caretPosition) {
-        String text = textArea.getText();
+    private void updateStatus(RichTextEditor editor, int caretPosition) {
+        String text = editor.getText();
 
         int line = 1;
         int column = 1;
@@ -363,45 +375,28 @@ public class EditorController implements Initializable {
         return false;
     }
 
-    private void createNewTab(String title) {
-        String tabTitle;
-        if (title == null || title.isEmpty() || title.equals("Untitled")) {
-            tabTitle = "Untitled-" + untitledCounter++;
-        } else {
-            tabTitle = title;
-        }
-        
-        Tab tab = new Tab(tabTitle);
-        TextArea textArea = new TextArea();
-        textArea.setWrapText(wordWrapMenuItem != null && wordWrapMenuItem.isSelected());
-        tab.setContent(textArea);
-        tabPane.getTabs().add(tab);
-        tabPane.getSelectionModel().select(tab);
-        setupTab(tab);
-    }
-
     private void loadNote(String noteName) {
-        // Try to find the file with any extension
-        File notesDir = new File("notes");
+        // Load from user-specific directory
+        String userNotesDir = "notes/" + currentUser;
+        File notesDir = new File(userNotesDir);
         File file = null;
-        
+
         if (notesDir.exists() && notesDir.isDirectory()) {
             File[] matchingFiles = notesDir.listFiles((dir, name) -> {
                 int lastDot = name.lastIndexOf('.');
                 String nameWithoutExt = lastDot > 0 ? name.substring(0, lastDot) : name;
                 return nameWithoutExt.equals(noteName);
             });
-            
+
             if (matchingFiles != null && matchingFiles.length > 0) {
                 file = matchingFiles[0];
             }
         }
-        
+
         if (file == null) {
-            // Fallback to .txt extension
-            file = new File("notes/" + noteName + ".txt");
+            file = new File(userNotesDir + "/" + noteName + ".txt");
         }
-        
+
         if (file.exists()) {
             try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
                 StringBuilder content = new StringBuilder();
@@ -416,9 +411,9 @@ public class EditorController implements Initializable {
 
                 createNewTab(noteName);
                 Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
-                TextArea textArea = (TextArea) currentTab.getContent();
-                textArea.setText(content.toString());
-                textArea.setFont(Font.font(SettingsManager.getFontFamily(), SettingsManager.getFontSize()));
+                RichTextEditor editor = tabEditorMap.get(currentTab);
+                editor.setText(content.toString());
+                editor.setFont(Font.font(SettingsManager.getFontFamily(), SettingsManager.getFontSize()));
                 tabFilePathMap.put(currentTab, file.getAbsolutePath());
                 markTabModified(currentTab, false);
                 fileStatusLabel.setText("Loaded");
@@ -432,13 +427,25 @@ public class EditorController implements Initializable {
     }
 
     private boolean saveTab(Tab tab) {
-        TextArea textArea = (TextArea) tab.getContent();
-        String content = textArea.getText();
+        RichTextEditor editor = tabEditorMap.get(tab);
+        String content = editor.getText();
         String tabTitle = tab.getText().replace("*", "");
 
         String filePath = tabFilePathMap.get(tab);
-        
-        // If no file path exists (new note), prompt user with FileChooser
+
+        // Handle collaborative documents
+        if (filePath != null && filePath.startsWith("collab:")) {
+            String docId = filePath.substring(6);
+            Document doc = editor.toDocument();
+            doc.setDocumentId(docId);
+            doc.setDocumentName(tabTitle);
+            collabClient.updateDocument(doc);
+            markTabModified(tab, false);
+            fileStatusLabel.setText("Saved to server: " + tabTitle);
+            return true;
+        }
+
+        // Regular file save
         if (filePath == null) {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Save Note");
@@ -446,22 +453,21 @@ public class EditorController implements Initializable {
             fileChooser.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter("Text Files", "*.txt")
             );
-            
-            // Set initial directory
-            File notesDir = new File("notes");
+
+            // Save to user-specific directory
+            String userNotesDir = "notes/" + currentUser;
+            File notesDir = new File(userNotesDir);
             if (!notesDir.exists()) {
-                notesDir.mkdir();
+                notesDir.mkdirs();
             }
             fileChooser.setInitialDirectory(notesDir);
-            
+
             File selectedFile = fileChooser.showSaveDialog(tabPane.getScene().getWindow());
             if (selectedFile == null) {
-                // User cancelled
                 return false;
             }
-            
+
             filePath = selectedFile.getAbsolutePath();
-            // Update tab title with new filename (without extension)
             String newFileName = selectedFile.getName().replace(".txt", "");
             tab.setText(newFileName);
         }
@@ -498,13 +504,11 @@ public class EditorController implements Initializable {
         }, 30000, 30000);
     }
 
-    @FXML
-    private void handleNew(ActionEvent event) {
+    @FXML private void handleNew(ActionEvent event) {
         createNewTab(null);
     }
 
-    @FXML
-    private void handleOpen(ActionEvent event) {
+    @FXML private void handleOpen(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open File");
         fileChooser.getExtensionFilters().add(
@@ -524,8 +528,8 @@ public class EditorController implements Initializable {
                 String fileName = file.getName().replace(".txt", "");
                 createNewTab(fileName);
                 Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
-                TextArea textArea = (TextArea) currentTab.getContent();
-                textArea.setText(content.toString());
+                RichTextEditor editor = tabEditorMap.get(currentTab);
+                editor.setText(content.toString());
                 tabFilePathMap.put(currentTab, file.getAbsolutePath());
                 markTabModified(currentTab, false);
             } catch (IOException e) {
@@ -534,16 +538,14 @@ public class EditorController implements Initializable {
         }
     }
 
-    @FXML
-    private void handleSave(ActionEvent event) {
+    @FXML private void handleSave(ActionEvent event) {
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
         if (selectedTab != null) {
             saveTab(selectedTab);
         }
     }
 
-    @FXML
-    private void handleSaveAs(ActionEvent event) {
+    @FXML private void handleSaveAs(ActionEvent event) {
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
         if (selectedTab != null) {
             TextInputDialog dialog = new TextInputDialog(selectedTab.getText().replace("*", ""));
@@ -562,8 +564,7 @@ public class EditorController implements Initializable {
         }
     }
 
-    @FXML
-    private void handleCloseTab(ActionEvent event) {
+    @FXML private void handleCloseTab(ActionEvent event) {
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
         if (selectedTab != null) {
             if (isTabModified(selectedTab)) {
@@ -580,8 +581,12 @@ public class EditorController implements Initializable {
         }
     }
 
-    @FXML
-    private void handleClose(ActionEvent event) {
+    @FXML private void handleClose(ActionEvent event) {
+        if (isCollaborating && collabClient != null) {
+            collabClient.leaveDocument();
+            collabClient.disconnect();
+        }
+
         boolean hasUnsaved = false;
         for (Tab tab : tabPane.getTabs()) {
             if (isTabModified(tab)) {
@@ -626,77 +631,58 @@ public class EditorController implements Initializable {
         }
     }
 
-    @FXML
-    private void handleUndo(ActionEvent event) {
+    @FXML private void handleUndo(ActionEvent event) {
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
         if (selectedTab != null) {
-            Stack<String> undoStack = undoStackMap.get(selectedTab);
-            Stack<String> redoStack = redoStackMap.get(selectedTab);
-            TextArea textArea = (TextArea) selectedTab.getContent();
-
-            if (undoStack != null && !undoStack.isEmpty()) {
-                redoStack.push(textArea.getText());
-                String previousText = undoStack.pop();
-                textArea.setText(previousText);
-            }
+            RichTextEditor editor = tabEditorMap.get(selectedTab);
+            editor.undo();
         }
     }
 
-    @FXML
-    private void handleRedo(ActionEvent event) {
+    @FXML private void handleRedo(ActionEvent event) {
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
         if (selectedTab != null) {
-            Stack<String> redoStack = redoStackMap.get(selectedTab);
-            TextArea textArea = (TextArea) selectedTab.getContent();
-
-            if (redoStack != null && !redoStack.isEmpty()) {
-                String nextText = redoStack.pop();
-                textArea.setText(nextText);
-            }
+            RichTextEditor editor = tabEditorMap.get(selectedTab);
+            editor.redo();
         }
     }
 
-    @FXML
-    private void handleCut(ActionEvent event) {
+    @FXML private void handleCut(ActionEvent event) {
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
         if (selectedTab != null) {
-            TextArea textArea = (TextArea) selectedTab.getContent();
-            textArea.cut();
+            RichTextEditor editor = tabEditorMap.get(selectedTab);
+            editor.cut();
         }
     }
 
-    @FXML
-    private void handleCopy(ActionEvent event) {
+    @FXML private void handleCopy(ActionEvent event) {
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
         if (selectedTab != null) {
-            TextArea textArea = (TextArea) selectedTab.getContent();
-            textArea.copy();
+            RichTextEditor editor = tabEditorMap.get(selectedTab);
+            editor.copy();
         }
     }
 
-    @FXML
-    private void handlePaste(ActionEvent event) {
+    @FXML private void handlePaste(ActionEvent event) {
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
         if (selectedTab != null) {
-            TextArea textArea = (TextArea) selectedTab.getContent();
-            textArea.paste();
+            RichTextEditor editor = tabEditorMap.get(selectedTab);
+            editor.paste();
         }
     }
 
-    @FXML
-    private void handleSelectAll(ActionEvent event) {
+    @FXML private void handleSelectAll(ActionEvent event) {
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
         if (selectedTab != null) {
-            TextArea textArea = (TextArea) selectedTab.getContent();
-            textArea.selectAll();
+            RichTextEditor editor = tabEditorMap.get(selectedTab);
+            editor.selectAll();
         }
     }
 
-    @FXML
-    private void handleFind(ActionEvent event) {
+    @FXML private void handleFind(ActionEvent event) {
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
         if (selectedTab != null) {
-            TextArea textArea = (TextArea) selectedTab.getContent();
+            RichTextEditor editor = tabEditorMap.get(selectedTab);
 
             TextInputDialog dialog = new TextInputDialog();
             dialog.setTitle("Find");
@@ -705,11 +691,11 @@ public class EditorController implements Initializable {
 
             Optional<String> result = dialog.showAndWait();
             result.ifPresent(searchText -> {
-                String content = textArea.getText();
+                String content = editor.getText();
                 int index = content.indexOf(searchText);
                 if (index >= 0) {
-                    textArea.selectRange(index, index + searchText.length());
-                    textArea.requestFocus();
+                    editor.selectRange(index, index + searchText.length());
+                    editor.getTextArea().requestFocus();
                 } else {
                     showInfo("Text not found: " + searchText);
                 }
@@ -717,11 +703,10 @@ public class EditorController implements Initializable {
         }
     }
 
-    @FXML
-    private void handleReplace(ActionEvent event) {
+    @FXML private void handleReplace(ActionEvent event) {
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
         if (selectedTab != null) {
-            TextArea textArea = (TextArea) selectedTab.getContent();
+            RichTextEditor editor = tabEditorMap.get(selectedTab);
 
             Dialog<ButtonType> dialog = new Dialog<>();
             dialog.setTitle("Find and Replace");
@@ -754,41 +739,499 @@ public class EditorController implements Initializable {
                 String findText = findField.getText();
                 String replaceText = replaceField.getText();
                 if (!findText.isEmpty()) {
-                    String content = textArea.getText();
+                    String content = editor.getText();
                     String newContent = content.replace(findText, replaceText);
-                    textArea.setText(newContent);
+                    editor.setText(newContent);
                     showInfo("Replaced all occurrences");
                 }
             }
         }
     }
 
-    @FXML
-    private void handleWordWrap(ActionEvent event) {
+    @FXML private void handleWordWrap(ActionEvent event) {
         boolean wrapText = wordWrapMenuItem.isSelected();
         for (Tab tab : tabPane.getTabs()) {
-            TextArea textArea = (TextArea) tab.getContent();
-            textArea.setWrapText(wrapText);
+            RichTextEditor editor = tabEditorMap.get(tab);
+            editor.setWrapText(wrapText);
         }
     }
 
-    @FXML
-    private void handleAbout(ActionEvent event) {
+    @FXML private void handleAbout(ActionEvent event) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("About QuillPad");
         alert.setHeaderText("QuillPad - Professional Note Editor");
         alert.setContentText(
                 "Version 1.0\n\n" +
                         "A feature-rich text editor with:\n" +
+                        "• Rich text editing (font, size, color)\n" +
                         "• Multiple tabs\n" +
                         "• Auto-save\n" +
+                        "• Real-time collaboration\n" +
                         "• Find and Replace\n" +
-                        "• Undo/Redo\n" +
-                        "• Word count\n" +
                         "• And more!\n\n" +
                         "Developed with JavaFX"
         );
         alert.showAndWait();
+    }
+
+    @FXML private void handleIncreaseFont(ActionEvent event) {
+        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
+        if (selectedTab != null) {
+            RichTextEditor editor = tabEditorMap.get(selectedTab);
+            String currentStyle = editor.getTextArea().getStyle();
+            double currentSize = SettingsManager.getFontSize();
+            
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("-fx-font-size: ([0-9.]+)px;");
+            java.util.regex.Matcher matcher = pattern.matcher(currentStyle);
+            if (matcher.find()) {
+                currentSize = Double.parseDouble(matcher.group(1));
+            }
+            
+            double newSize = Math.min(72, currentSize + 2);
+            editor.setFont(Font.font(SettingsManager.getFontFamily(), newSize));
+            fontSizeCombo.setValue((int) newSize);
+            fileStatusLabel.setText("Font size: " + (int)newSize + "px");
+        }
+    }
+
+    @FXML private void handleDecreaseFont(ActionEvent event) {
+        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
+        if (selectedTab != null) {
+            RichTextEditor editor = tabEditorMap.get(selectedTab);
+            String currentStyle = editor.getTextArea().getStyle();
+            double currentSize = SettingsManager.getFontSize();
+            
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("-fx-font-size: ([0-9.]+)px;");
+            java.util.regex.Matcher matcher = pattern.matcher(currentStyle);
+            if (matcher.find()) {
+                currentSize = Double.parseDouble(matcher.group(1));
+            }
+            
+            double newSize = Math.max(8, currentSize - 2);
+            editor.setFont(Font.font(SettingsManager.getFontFamily(), newSize));
+            fontSizeCombo.setValue((int) newSize);
+            fileStatusLabel.setText("Font size: " + (int)newSize + "px");
+        }
+    }
+
+    @FXML private void handleResetFont(ActionEvent event) {
+        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
+        if (selectedTab != null) {
+            RichTextEditor editor = tabEditorMap.get(selectedTab);
+            int savedSize = SettingsManager.getFontSize();
+            editor.setFont(Font.font(SettingsManager.getFontFamily(), savedSize));
+            fontFamilyCombo.setValue(SettingsManager.getFontFamily());
+            fontSizeCombo.setValue(savedSize);
+            fileStatusLabel.setText("Font reset");
+        }
+    }
+
+    private void applyFontFamily() {
+        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
+        if (selectedTab != null) {
+            RichTextEditor editor = tabEditorMap.get(selectedTab);
+            String fontFamily = fontFamilyCombo.getValue();
+            if (fontFamily != null) {
+                editor.applyFontFamilyToSelection(fontFamily);
+            }
+        }
+    }
+
+    private void applyFontSize() {
+        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
+        if (selectedTab != null) {
+            RichTextEditor editor = tabEditorMap.get(selectedTab);
+            Integer fontSize = fontSizeCombo.getValue();
+            if (fontSize != null) {
+                editor.applyFontSizeToSelection(fontSize);
+            }
+        }
+    }
+
+    private void applyBold() {
+        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
+        if (selectedTab != null) {
+            RichTextEditor editor = tabEditorMap.get(selectedTab);
+            editor.applyBoldToSelection();
+        }
+    }
+
+    private void applyItalic() {
+        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
+        if (selectedTab != null) {
+            RichTextEditor editor = tabEditorMap.get(selectedTab);
+            editor.applyItalicToSelection();
+        }
+    }
+
+    private void applyUnderline() {
+        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
+        if (selectedTab != null) {
+            RichTextEditor editor = tabEditorMap.get(selectedTab);
+            editor.applyUnderlineToSelection();
+        }
+    }
+
+    private void applyStrikethrough() {
+        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
+        if (selectedTab != null) {
+            RichTextEditor editor = tabEditorMap.get(selectedTab);
+            editor.applyStrikethroughToSelection();
+        }
+    }
+
+    private void applyTextColor() {
+        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
+        if (selectedTab != null) {
+            RichTextEditor editor = tabEditorMap.get(selectedTab);
+            Color color = textColorPicker.getValue();
+            if (color != null) {
+                String colorHex = String.format("#%02X%02X%02X", 
+                    (int)(color.getRed() * 255),
+                    (int)(color.getGreen() * 255),
+                    (int)(color.getBlue() * 255));
+                editor.applyTextColorToSelection(colorHex);
+            }
+        }
+    }
+
+    private void applyHighlight() {
+        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
+        if (selectedTab != null) {
+            RichTextEditor editor = tabEditorMap.get(selectedTab);
+            Color color = highlightColorPicker.getValue();
+            if (color != null) {
+                String colorHex = String.format("#%02X%02X%02X", 
+                    (int)(color.getRed() * 255),
+                    (int)(color.getGreen() * 255),
+                    (int)(color.getBlue() * 255));
+                editor.applyHighlightToSelection(colorHex);
+            }
+        }
+    }
+
+    @FXML private void handleConnect(ActionEvent event) {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Connect to Collaboration Server");
+        dialog.setHeaderText("Enter server details:");
+        dialog.initOwner(tabPane.getScene().getWindow());
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        TextField hostField = new TextField();
+        hostField.setText("localhost");
+        TextField portField = new TextField();
+        portField.setText("9999");
+        TextField userIdField = new TextField();
+        userIdField.setText(currentUser != null ? currentUser : "User" + new Random().nextInt(1000));
+
+        grid.add(new Label("Host:"), 0, 0);
+        grid.add(hostField, 1, 0);
+        grid.add(new Label("Port:"), 0, 1);
+        grid.add(portField, 1, 1);
+        grid.add(new Label("User ID:"), 0, 2);
+        grid.add(userIdField, 1, 2);
+
+        dialog.getDialogPane().setContent(grid);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        Optional<ButtonType> result = dialog.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            String host = hostField.getText();
+            int port;
+            try {
+                port = Integer.parseInt(portField.getText());
+            } catch (NumberFormatException e) {
+                port = 9999;
+            }
+            String userId = userIdField.getText();
+
+            connectToServer(host, port, userId);
+        }
+    }
+
+    private void connectToServer(String host, int port, String userId) {
+        collabClient = new CollabClient(host, port);
+
+        collabClient.addMessageHandler(message -> {
+            Platform.runLater(() -> handleCollabMessage(message));
+        });
+
+        collabClient.addErrorListener(error -> {
+            Platform.runLater(() -> showError(error));
+        });
+
+        collabClient.addConnectionListener(() -> {
+            Platform.runLater(this::updateCollabUI);
+        });
+
+        if (collabClient.connect(userId)) {
+            isCollaborating = true;
+            connectionStatusLabel.setText("Connected");
+            connectionStatusLabel.setStyle("-fx-text-fill: #50fa7b;");
+            updateCollabUI();
+            showInfo("Connected to collaboration server");
+        } else {
+            showError("Failed to connect to server");
+        }
+    }
+
+    private void handleCollabMessage(Message message) {
+        String senderId = message.getSenderId();
+        boolean isFromMe = senderId != null && senderId.equals(collabClient.getUserId());
+        
+        switch (message.getType()) {
+            case DOCUMENT_SYNC:
+            case DOCUMENT_UPDATE:
+                Document doc = message.getDocument();
+                if (doc != null) {
+                    String docId = doc.getDocumentId();
+                    String docName = doc.getDocumentName();
+                    
+                    // Find if we already have this document open
+                    Tab existingTab = findTabByDocumentId(docId);
+                    
+                    if (existingTab != null) {
+                        // Update existing tab - set flag to prevent loops
+                        tabPane.getSelectionModel().select(existingTab);
+                        RichTextEditor editor = tabEditorMap.get(existingTab);
+                        
+                        isReceivingUpdate = true;
+                        editor.fromDocument(doc);
+                        isReceivingUpdate = false;
+                        
+                        markTabModified(existingTab, false);
+                        
+                        // Show notification if change is from another user
+                        if (!isFromMe) {
+                            fileStatusLabel.setText("Updated by: " + senderId);
+                            showNotification("Document Updated", docName + " was updated by " + senderId);
+                        } else {
+                            fileStatusLabel.setText("Synced: " + docName);
+                        }
+                    } else {
+                        // Create new tab for this document
+                        Tab newTab = new Tab(docName);
+                        RichTextEditor editor = new RichTextEditor();
+                        editor.setDocumentId(docId);
+                        editor.setDocumentName(docName);
+                        editor.fromDocument(doc);
+                        editor.setWrapText(wordWrapMenuItem != null && wordWrapMenuItem.isSelected());
+                        editor.setFont(Font.font(SettingsManager.getFontFamily(), SettingsManager.getFontSize()));
+                        
+                        newTab.setContent(editor);
+                        tabEditorMap.put(newTab, editor);
+                        tabModifiedMap.put(newTab, false);
+                        
+                        // Store document ID for collaboration
+                        tabFilePathMap.put(newTab, "collab:" + docId);
+                        
+                        tabPane.getTabs().add(newTab);
+                        tabPane.getSelectionModel().select(newTab);
+                        
+                        setupCollabTabListeners(newTab, editor);
+                        
+                        if (!isFromMe) {
+                            showNotification("New Document", docName + " was shared by " + senderId);
+                        }
+                    }
+                    
+                    if (isFromMe) {
+                        fileStatusLabel.setText("Synced: " + docName);
+                    }
+                }
+                break;
+
+            case USER_LIST:
+                String users = message.getPayload();
+                if (users != null && !users.isEmpty()) {
+                    collabStatusLabel.setText("Users: " + users);
+                } else {
+                    collabStatusLabel.setText("");
+                }
+                break;
+
+            case ERROR:
+                showError(message.getPayload());
+                break;
+
+            default:
+                break;
+        }
+    }
+    
+    private Tab findTabByDocumentId(String docId) {
+        for (Tab tab : tabPane.getTabs()) {
+            String path = tabFilePathMap.get(tab);
+            if (path != null && path.equals("collab:" + docId)) {
+                return tab;
+            }
+        }
+        return null;
+    }
+    
+    private void setupCollabTabListeners(Tab tab, RichTextEditor editor) {
+        String docId = editor.getDocumentId();
+        
+        editor.getTextArea().caretPositionProperty().addListener((caretObs, oldPos, newPos) -> {
+            updateStatus(editor, newPos.intValue());
+            if (isCollaborating) {
+                collabClient.sendCursorPosition(newPos.intValue());
+            }
+        });
+
+        editor.getTextArea().textProperty().addListener((obs, oldText, newText) -> {
+            // Don't send updates if we're receiving a remote update
+            if (isReceivingUpdate) {
+                return;
+            }
+            
+            markTabModified(tab, true);
+            updateStatus(editor, editor.getCaretPosition());
+
+            if (isCollaborating && oldText != null && !oldText.equals(newText)) {
+                System.out.println("Sending document update...");
+                sendDocumentUpdate();
+            }
+        });
+
+        tab.setOnCloseRequest(event -> {
+            // Leave the collaborative document when closing tab
+            if (docId != null && collabClient != null && collabClient.isConnected()) {
+                collabClient.leaveDocument();
+            }
+            
+            if (isTabModified(tab)) {
+                event.consume();
+                if (confirmCloseTab(tab)) {
+                    tabPane.getTabs().remove(tab);
+                }
+            } else {
+                tabPane.getTabs().remove(tab);
+            }
+        });
+    }
+
+    private void updateCollabUI() {
+        if (collabClient != null && collabClient.isConnected()) {
+            connectMenuItem.setDisable(true);
+            disconnectMenuItem.setDisable(false);
+            createCollabDocMenuItem.setDisable(false);
+            joinDocumentMenuItem.setDisable(false);
+            showUsersMenuItem.setDisable(false);
+
+            if (collabClient.getCurrentDocumentId() != null) {
+                leaveDocumentMenuItem.setDisable(false);
+            }
+        } else {
+            connectMenuItem.setDisable(false);
+            disconnectMenuItem.setDisable(true);
+            createCollabDocMenuItem.setDisable(true);
+            joinDocumentMenuItem.setDisable(true);
+            leaveDocumentMenuItem.setDisable(true);
+            showUsersMenuItem.setDisable(true);
+            connectionStatusLabel.setText("Offline");
+            connectionStatusLabel.setStyle("-fx-text-fill: #ff5555;");
+        }
+    }
+
+    @FXML private void handleDisconnect(ActionEvent event) {
+        if (collabClient != null) {
+            collabClient.leaveDocument();
+            collabClient.disconnect();
+            isCollaborating = false;
+            connectionStatusLabel.setText("Offline");
+            connectionStatusLabel.setStyle("-fx-text-fill: #ff5555;");
+            collabStatusLabel.setText("");
+            updateCollabUI();
+            showInfo("Disconnected from server");
+        }
+    }
+
+    @FXML private void handleCreateCollabDoc(ActionEvent event) {
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Create Shared Document");
+        dialog.setHeaderText("Enter document name:");
+        dialog.setContentText("Document Name:");
+
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(name -> {
+            if (!name.isEmpty() && collabClient != null) {
+                collabClient.createDocument(name);
+            }
+        });
+    }
+
+    @FXML private void handleJoinDocument(ActionEvent event) {
+        if (collabClient == null || !collabClient.isConnected()) {
+            showError("Not connected to server");
+            return;
+        }
+
+        List<String> docs = collabClient.getDocumentList();
+        if (docs.isEmpty()) {
+            showInfo("No documents available on server");
+            return;
+        }
+
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Join Document");
+        dialog.setHeaderText("Select a document to join:");
+
+        ListView<String> listView = new ListView<>(FXCollections.observableArrayList(docs));
+        listView.setPrefHeight(200);
+
+        dialog.getDialogPane().setContent(listView);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        Optional<ButtonType> result = dialog.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            String selected = listView.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                String docId = selected.split(":")[0];
+                collabClient.joinDocument(docId);
+                leaveDocumentMenuItem.setDisable(false);
+                showInfo("Joined document: " + selected);
+            }
+        }
+    }
+
+    @FXML private void handleLeaveDocument(ActionEvent event) {
+        if (collabClient != null) {
+            collabClient.leaveDocument();
+            leaveDocumentMenuItem.setDisable(true);
+            collabStatusLabel.setText("");
+            showInfo("Left document");
+        }
+    }
+
+    @FXML private void handleShowUsers(ActionEvent event) {
+        if (collabClient != null) {
+            List<String> users = collabClient.getActiveUsers();
+            String userList = users.isEmpty() ? "No other users" : String.join(", ", users);
+            showInfo("Active users: " + userList);
+        }
+    }
+
+    private void sendDocumentUpdate() {
+        if (collabClient != null && isCollaborating) {
+            Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
+            if (selectedTab != null) {
+                RichTextEditor editor = tabEditorMap.get(selectedTab);
+                Document doc = editor.toDocument();
+                
+                // Get the document ID from the file path (for collaborative docs)
+                String filePath = tabFilePathMap.get(selectedTab);
+                if (filePath != null && filePath.startsWith("collab:")) {
+                    doc.setDocumentId(filePath.substring(6));
+                }
+                
+                collabClient.updateDocument(doc);
+            }
+        }
     }
 
     private void showError(String message) {
@@ -799,46 +1242,19 @@ public class EditorController implements Initializable {
         alert.showAndWait();
     }
 
+    private void showNotification(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.show();
+    }
+
     private void showInfo(String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Information");
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
-    }
-
-    @FXML
-    private void handleIncreaseFont(ActionEvent event) {
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            TextArea textArea = (TextArea) selectedTab.getContent();
-            Font currentFont = textArea.getFont();
-            double newSize = Math.min(32, currentFont.getSize() + 2);
-            textArea.setFont(Font.font(currentFont.getFamily(), newSize));
-            fileStatusLabel.setText("Font size: " + (int)newSize + "px");
-        }
-    }
-
-    @FXML
-    private void handleDecreaseFont(ActionEvent event) {
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            TextArea textArea = (TextArea) selectedTab.getContent();
-            Font currentFont = textArea.getFont();
-            double newSize = Math.max(8, currentFont.getSize() - 2);
-            textArea.setFont(Font.font(currentFont.getFamily(), newSize));
-            fileStatusLabel.setText("Font size: " + (int)newSize + "px");
-        }
-    }
-
-    @FXML
-    private void handleResetFont(ActionEvent event) {
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            TextArea textArea = (TextArea) selectedTab.getContent();
-            int savedSize = SettingsManager.getFontSize();
-            textArea.setFont(Font.font(SettingsManager.getFontFamily(), savedSize));
-            fileStatusLabel.setText("Font size reset: " + savedSize + "px");
-        }
     }
 }
