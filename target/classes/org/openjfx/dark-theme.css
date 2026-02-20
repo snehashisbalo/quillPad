@@ -253,11 +253,31 @@
     -fx-text-fill: #cccccc;
 }
 
+.dark-theme .menu-bar .menu .label,
+.dark-theme .menu-bar .menu-button .label,
+.dark-theme .menu-bar .menu-item .label {
+    -fx-text-fill: #d4d4d4;
+}
+
 .dark-theme .menu-bar .menu-item {
     -fx-text-fill: #cccccc;
 }
 
 .dark-theme .menu-bar .menu-item:focused {
+    -fx-background-color: #505050;
+}
+
+.dark-theme .context-menu {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #3c3c3c;
+}
+
+.dark-theme .context-menu .menu-item .label {
+    -fx-text-fill: #d4d4d4;
+}
+
+.dark-theme .context-menu .menu-item:focused,
+.dark-theme .context-menu .menu-item:armed {
     -fx-background-color: #505050;
 }
 
@@ -279,6 +299,63 @@
 
 .dark-theme .editor-tabs .tab .tab-label {
     -fx-text-fill: #cccccc;
+}
+
+.dark-theme .formatting-toolbar {
+    -fx-background-color: #252526;
+    -fx-border-color: #3c3c3c;
+    -fx-border-width: 0 0 1 0;
+}
+
+.dark-theme .toolbar-label,
+.dark-theme .connection-status,
+.dark-theme .formatting-toolbar .label {
+    -fx-text-fill: #d4d4d4;
+}
+
+.dark-theme .formatting-toolbar .button,
+.dark-theme .formatting-toolbar .toggle-button,
+.dark-theme .formatting-toolbar .color-picker,
+.dark-theme .formatting-toolbar .combo-box-base {
+    -fx-background-color: #3a3a3a;
+    -fx-text-fill: #e6e6e6;
+    -fx-border-color: #5a5a5a;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+
+.dark-theme .formatting-toolbar .button:hover,
+.dark-theme .formatting-toolbar .toggle-button:hover,
+.dark-theme .formatting-toolbar .combo-box-base:hover {
+    -fx-background-color: #4a4a4a;
+}
+
+.dark-theme .formatting-toolbar .combo-box-base .text,
+.dark-theme .formatting-toolbar .color-picker .label,
+.dark-theme .formatting-toolbar .button .text,
+.dark-theme .formatting-toolbar .toggle-button .text {
+    -fx-fill: #e6e6e6;
+}
+
+.dark-theme .rich-text-editor,
+.dark-theme .rich-text-editor .virtualized-scroll-pane,
+.dark-theme .rich-text-editor .virtualized-scroll-pane .viewport,
+.dark-theme .rich-text-editor .virtualized-scroll-pane .content {
+    -fx-background-color: #1e1e1e;
+}
+
+.dark-theme .rich-editor-area {
+    -fx-background-color: #1e1e1e;
+    -fx-control-inner-background: #1e1e1e;
+    -fx-fill: #d4d4d4;
+}
+
+.dark-theme .rich-editor-area .text {
+    -fx-fill: #d4d4d4;
+}
+
+.dark-theme .rich-editor-area .caret {
+    -fx-stroke: #d4d4d4;
 }
 
 .dark-theme .text-area {
@@ -319,6 +396,19 @@
 .dark-theme .theme-toggle-button:hover {
     -fx-background-color: #505050;
     -fx-cursor: hand;
+}
+
+.dark-theme .editor-theme-toggle-button {
+    -fx-background-color: #3a3a3a;
+    -fx-border-color: #5a5a5a;
+    -fx-text-fill: #e6e6e6;
+    -fx-min-width: 64;
+    -fx-pref-width: 64;
+    -fx-max-width: 64;
+    -fx-min-height: 30;
+    -fx-pref-height: 30;
+    -fx-max-height: 30;
+    -fx-alignment: CENTER;
 }
 /* Input Fields - Dark */
 .dark-theme .input-field-container {

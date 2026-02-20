@@ -9,62 +9,156 @@
             fx:controller="org.openjfx.controller.EditorController"
             styleClass="editor-container">
 
-    <!-- TOP: Menu Bar -->
     <top>
-        <MenuBar styleClass="menu-bar">
-            <menus>
-                <!-- File Menu -->
-                <Menu text="File">
-                    <items>
-                        <MenuItem fx:id="newMenuItem" text="New"/>
-                        <MenuItem fx:id="openMenuItem" text="Open..."/>
-                        <SeparatorMenuItem/>
-                        <MenuItem fx:id="saveMenuItem" text="Save"/>
-                        <MenuItem fx:id="saveAsMenuItem" text="Save As..."/>
-                        <SeparatorMenuItem/>
-                        <MenuItem fx:id="closeMenuItem" text="Close"/>
-                    </items>
-                </Menu>
+        <VBox>
+            <MenuBar styleClass="menu-bar">
+                <menus>
+                    <Menu text="File">
+                        <items>
+                            <MenuItem fx:id="newMenuItem" text="New"/>
+                            <MenuItem fx:id="openMenuItem" text="Open..."/>
+                            <SeparatorMenuItem/>
+                            <MenuItem fx:id="saveMenuItem" text="Save"/>
+                            <MenuItem fx:id="saveAsMenuItem" text="Save As..."/>
+                            <SeparatorMenuItem/>
+                            <MenuItem fx:id="closeMenuItem" text="Close"/>
+                        </items>
+                    </Menu>
 
-                <!-- Edit Menu -->
-                <Menu text="Edit">
-                    <items>
-                        <MenuItem fx:id="undoMenuItem" text="Undo"/>
-                        <MenuItem fx:id="redoMenuItem" text="Redo"/>
-                        <SeparatorMenuItem/>
-                        <MenuItem fx:id="cutMenuItem" text="Cut"/>
-                        <MenuItem fx:id="copyMenuItem" text="Copy"/>
-                        <MenuItem fx:id="pasteMenuItem" text="Paste"/>
-                        <SeparatorMenuItem/>
-                        <MenuItem fx:id="selectAllMenuItem" text="Select All"/>
-                        <SeparatorMenuItem/>
-                        <MenuItem fx:id="findMenuItem" text="Find..."/>
-                        <MenuItem fx:id="replaceMenuItem" text="Replace..."/>
-                    </items>
-                </Menu>
+                    <Menu text="Edit">
+                        <items>
+                            <MenuItem fx:id="undoMenuItem" text="Undo"/>
+                            <MenuItem fx:id="redoMenuItem" text="Redo"/>
+                            <SeparatorMenuItem/>
+                            <MenuItem fx:id="cutMenuItem" text="Cut"/>
+                            <MenuItem fx:id="copyMenuItem" text="Copy"/>
+                            <MenuItem fx:id="pasteMenuItem" text="Paste"/>
+                            <SeparatorMenuItem/>
+                            <MenuItem fx:id="selectAllMenuItem" text="Select All"/>
+                            <SeparatorMenuItem/>
+                            <MenuItem fx:id="findMenuItem" text="Find..."/>
+                            <MenuItem fx:id="replaceMenuItem" text="Replace..."/>
+                        </items>
+                    </Menu>
 
-                <!-- View Menu -->
-                <Menu text="View">
-                    <items>
-                        <CheckMenuItem fx:id="wordWrapMenuItem" text="Word Wrap" selected="true"/>
-                        <SeparatorMenuItem/>
-                        <MenuItem fx:id="increaseFontMenuItem" text="Increase Font Size"/>
-                        <MenuItem fx:id="decreaseFontMenuItem" text="Decrease Font Size"/>
-                        <MenuItem fx:id="resetFontMenuItem" text="Reset Font Size"/>
-                    </items>
-                </Menu>
+                    <Menu text="View">
+                        <items>
+                            <CheckMenuItem fx:id="wordWrapMenuItem" text="Word Wrap" selected="true"/>
+                            <SeparatorMenuItem/>
+                            <MenuItem fx:id="increaseFontMenuItem" text="Increase Font Size"/>
+                            <MenuItem fx:id="decreaseFontMenuItem" text="Decrease Font Size"/>
+                            <MenuItem fx:id="resetFontMenuItem" text="Reset Font Size"/>
+                        </items>
+                    </Menu>
 
-                <!-- Help Menu -->
-                <Menu text="Help">
-                    <items>
-                        <MenuItem fx:id="aboutMenuItem" text="About QuillPad"/>
-                    </items>
-                </Menu>
-            </menus>
-        </MenuBar>
+                    <Menu text="Collaborate">
+                        <items>
+                            <MenuItem fx:id="connectMenuItem" text="Connect to Server..."/>
+                            <MenuItem fx:id="disconnectMenuItem" text="Disconnect" disable="true"/>
+                            <SeparatorMenuItem/>
+                            <MenuItem fx:id="createCollabDocMenuItem" text="Create Shared Document..." disable="true"/>
+                            <MenuItem fx:id="joinDocumentMenuItem" text="Join Document..." disable="true"/>
+                            <MenuItem fx:id="leaveDocumentMenuItem" text="Leave Document" disable="true"/>
+                            <SeparatorMenuItem/>
+                            <MenuItem fx:id="showUsersMenuItem" text="Show Active Users" disable="true"/>
+                        </items>
+                    </Menu>
+
+                    <Menu text="Help">
+                        <items>
+                            <MenuItem fx:id="aboutMenuItem" text="About QuillPad"/>
+                        </items>
+                    </Menu>
+                </menus>
+            </MenuBar>
+
+            <ToolBar fx:id="formattingToolBar" styleClass="formatting-toolbar">
+                <Label text="Font:" styleClass="toolbar-label"/>
+                <ComboBox fx:id="fontFamilyCombo" prefWidth="120"/>
+                
+                <Label text="Size:" styleClass="toolbar-label">
+                    <padding>
+                        <Insets left="10"/>
+                    </padding>
+                </Label>
+                <ComboBox fx:id="fontSizeCombo" prefWidth="70"/>
+                
+                <Separator orientation="VERTICAL"/>
+                
+                <ToggleButton fx:id="boldButton" text="B" styleClass="bold-button">
+                    <tooltip>
+                        <Tooltip text="Bold (Ctrl+B)"/>
+                    </tooltip>
+                </ToggleButton>
+                <ToggleButton fx:id="italicButton" text="I" styleClass="italic-button">
+                    <tooltip>
+                        <Tooltip text="Italic (Ctrl+I)"/>
+                    </tooltip>
+                </ToggleButton>
+                <ToggleButton fx:id="underlineButton" text="U" styleClass="underline-button">
+                    <tooltip>
+                        <Tooltip text="Underline (Ctrl+U)"/>
+                    </tooltip>
+                </ToggleButton>
+                <ToggleButton fx:id="strikethroughButton" text="S" styleClass="strikethrough-button">
+                    <tooltip>
+                        <Tooltip text="Strikethrough"/>
+                    </tooltip>
+                </ToggleButton>
+                
+                <Separator orientation="VERTICAL"/>
+                
+                <Label text="Text:" styleClass="toolbar-label"/>
+                <ColorPicker fx:id="textColorPicker" styleClass="text-color-picker">
+                    <tooltip>
+                        <Tooltip text="Text Color"/>
+                    </tooltip>
+                </ColorPicker>
+                
+                <Label text="Highlight:" styleClass="toolbar-label">
+                    <padding>
+                        <Insets left="10"/>
+                    </padding>
+                </Label>
+                <ColorPicker fx:id="highlightColorPicker" styleClass="highlight-color-picker">
+                    <tooltip>
+                        <Tooltip text="Highlight Color"/>
+                    </tooltip>
+                </ColorPicker>
+                
+                <Separator orientation="VERTICAL"/>
+                
+                <Button fx:id="alignLeftButton" text="L" styleClass="align-button">
+                    <tooltip>
+                        <Tooltip text="Align Left"/>
+                    </tooltip>
+                </Button>
+                <Button fx:id="alignCenterButton" text="C" styleClass="align-button">
+                    <tooltip>
+                        <Tooltip text="Align Center"/>
+                    </tooltip>
+                </Button>
+                <Button fx:id="alignRightButton" text="R" styleClass="align-button">
+                    <tooltip>
+                        <Tooltip text="Align Right"/>
+                    </tooltip>
+                </Button>
+
+                <Button fx:id="themeToggleButton" text="Theme" styleClass="theme-toggle-button editor-theme-toggle-button">
+                    <tooltip>
+                        <Tooltip text="Toggle Theme"/>
+                    </tooltip>
+                </Button>
+                
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <Button fx:id="requestWriteButton" text="Request Write" disable="true"/>
+                
+                <Label fx:id="connectionStatusLabel" text="Offline" styleClass="connection-status"/>
+            </ToolBar>
+        </VBox>
     </top>
 
-    <!-- CENTER: Tabbed Editor -->
     <center>
         <TabPane fx:id="tabPane"
                  tabClosingPolicy="ALL_TABS"
@@ -72,7 +166,6 @@
         </TabPane>
     </center>
 
-    <!-- BOTTOM: Status Bar -->
     <bottom>
         <HBox spacing="15"
               alignment="CENTER_LEFT"
@@ -106,6 +199,10 @@
                        styleClass="status-item"/>
 
                 <Region HBox.hgrow="ALWAYS"/>
+
+                <Label fx:id="collabStatusLabel" 
+                       text="" 
+                       styleClass="collab-status"/>
 
                 <Label text="QuillPad v1.0"
                        styleClass="version-label"/>

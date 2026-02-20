@@ -335,10 +335,38 @@
     -fx-background-color: #F8F9FA;
     -fx-border-color: #E1E8ED;
     -fx-border-width: 0 0 1 0;
+    -fx-padding: 2 6 2 6;
+}
+
+.menu-bar > .container {
+    -fx-padding: 0;
+}
+
+.menu-bar > .container > .menu-button {
+    -fx-padding: 0 10 0 10;
+    -fx-alignment: CENTER;
+}
+
+.menu-bar > .container > .menu-button > .label {
+    -fx-padding: 0;
+    -fx-alignment: CENTER;
 }
 
 .menu-bar .menu {
     -fx-font-size: 13px;
+    -fx-text-fill: #2C3E50;
+}
+
+.menu-bar .menu .label {
+    -fx-text-fill: #2C3E50;
+}
+
+.menu-bar .menu-button .label {
+    -fx-text-fill: #2C3E50;
+}
+
+.menu-bar .menu-item .label {
+    -fx-text-fill: #2C3E50;
 }
 
 .menu-bar .menu-item {
@@ -346,6 +374,20 @@
 }
 
 .menu-bar .menu-item:focused {
+    -fx-background-color: #E8F4F8;
+}
+
+.context-menu {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #D0D7DE;
+}
+
+.context-menu .menu-item .label {
+    -fx-text-fill: #2C3E50;
+}
+
+.context-menu .menu-item:focused,
+.context-menu .menu-item:armed {
     -fx-background-color: #E8F4F8;
 }
 
@@ -374,6 +416,31 @@
 
 .editor-tabs .tab:selected .tab-label {
     -fx-font-weight: bold;
+}
+
+.rich-text-editor {
+    -fx-background-color: #FFFFFF;
+}
+
+.rich-text-editor .virtualized-scroll-pane,
+.rich-text-editor .virtualized-scroll-pane .viewport,
+.rich-text-editor .virtualized-scroll-pane .content {
+    -fx-background-color: #FFFFFF;
+}
+
+.rich-editor-area {
+    -fx-background-color: #FFFFFF;
+    -fx-control-inner-background: #FFFFFF;
+    -fx-fill: #2C3E50;
+    -fx-padding: 12;
+}
+
+.rich-editor-area .text {
+    -fx-fill: #2C3E50;
+}
+
+.rich-editor-area .caret {
+    -fx-stroke: #2C3E50;
 }
 
 .text-area {
@@ -461,6 +528,50 @@
 
 .theme-toggle-button:hover {
     -fx-background-color: rgba(255, 255, 255, 0.3);
+}
+
+.formatting-toolbar {
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 6 10;
+    -fx-min-height: 42;
+    -fx-pref-height: 42;
+}
+
+.formatting-toolbar > .container {
+    -fx-padding: 0;
+}
+
+.formatting-toolbar > .container > .box {
+    -fx-alignment: CENTER_LEFT;
+}
+
+.formatting-toolbar .button,
+.formatting-toolbar .toggle-button,
+.formatting-toolbar .color-picker,
+.formatting-toolbar .combo-box-base {
+    -fx-min-height: 30;
+    -fx-pref-height: 30;
+    -fx-max-height: 30;
+    -fx-padding: 0 8 0 8;
+    -fx-alignment: CENTER;
+}
+
+.formatting-toolbar .label {
+    -fx-padding: 0 2 0 2;
+}
+
+.editor-theme-toggle-button {
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-min-width: 64;
+    -fx-pref-width: 64;
+    -fx-max-width: 64;
+    -fx-min-height: 30;
+    -fx-pref-height: 30;
+    -fx-max-height: 30;
+    -fx-padding: 0 10;
+    -fx-alignment: CENTER;
+    -fx-font-size: 12px;
 }
 
 /* ===========================
@@ -553,6 +664,68 @@
 
 .light-theme .theme-toggle-button:focused {
     -fx-effect: dropshadow(gaussian, rgba(74, 144, 226, 0.35), 8, 0, 0, 0);
+}
+
+/* Light theme layout normalization to match other themes */
+.light-theme .menu-bar .menu-button {
+    -fx-padding: 0 8 0 8;
+}
+
+.light-theme .menu-bar .menu-button .label {
+    -fx-text-fill: #2C3E50;
+}
+
+.light-theme .formatting-toolbar {
+    -fx-background-color: #F8F9FA;
+    -fx-border-color: #E1E8ED;
+    -fx-border-width: 0 0 1 0;
+}
+
+.light-theme .toolbar-label,
+.light-theme .connection-status,
+.light-theme .formatting-toolbar .label {
+    -fx-text-fill: #2C3E50;
+}
+
+.light-theme .formatting-toolbar .button,
+.light-theme .formatting-toolbar .toggle-button,
+.light-theme .formatting-toolbar .color-picker,
+.light-theme .formatting-toolbar .combo-box-base {
+    -fx-background-color: #FFFFFF;
+    -fx-text-fill: #2C3E50;
+    -fx-border-color: #D0D7DE;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-alignment: CENTER;
+}
+
+.light-theme .formatting-toolbar .button .text,
+.light-theme .formatting-toolbar .toggle-button .text,
+.light-theme .formatting-toolbar .combo-box-base .text,
+.light-theme .formatting-toolbar .color-picker .label {
+    -fx-fill: #2C3E50;
+}
+
+.light-theme .editor-theme-toggle-button {
+    -fx-background-color: #E8F1FB;
+    -fx-border-color: #4A90E2;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-text-fill: #1F5FA9;
+    -fx-min-width: 64;
+    -fx-pref-width: 64;
+    -fx-max-width: 64;
+    -fx-min-height: 30;
+    -fx-pref-height: 30;
+    -fx-max-height: 30;
+    -fx-padding: 0 10;
+    -fx-alignment: CENTER;
+}
+
+.light-theme .editor-theme-toggle-button:hover {
+    -fx-background-color: #4A90E2;
+    -fx-text-fill: #FFFFFF;
 }
 
 

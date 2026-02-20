@@ -264,11 +264,31 @@
     -fx-text-fill: -fx-tokyo-fg;
 }
 
+.tokyo-night-theme .menu-bar .menu .label,
+.tokyo-night-theme .menu-bar .menu-button .label,
+.tokyo-night-theme .menu-bar .menu-item .label {
+    -fx-text-fill: -fx-tokyo-fg;
+}
+
 .tokyo-night-theme .menu-bar .menu-item {
     -fx-text-fill: -fx-tokyo-fg;
 }
 
 .tokyo-night-theme .menu-bar .menu-item:focused {
+    -fx-background-color: -fx-tokyo-surface-light;
+}
+
+.tokyo-night-theme .context-menu {
+    -fx-background-color: -fx-tokyo-bg-dark;
+    -fx-border-color: -fx-tokyo-surface;
+}
+
+.tokyo-night-theme .context-menu .menu-item .label {
+    -fx-text-fill: -fx-tokyo-fg;
+}
+
+.tokyo-night-theme .context-menu .menu-item:focused,
+.tokyo-night-theme .context-menu .menu-item:armed {
     -fx-background-color: -fx-tokyo-surface-light;
 }
 
@@ -290,6 +310,63 @@
 
 .tokyo-night-theme .editor-tabs .tab .tab-label {
     -fx-text-fill: -fx-tokyo-fg;
+}
+
+.tokyo-night-theme .formatting-toolbar {
+    -fx-background-color: -fx-tokyo-bg-dark;
+    -fx-border-color: -fx-tokyo-surface;
+    -fx-border-width: 0 0 1 0;
+}
+
+.tokyo-night-theme .toolbar-label,
+.tokyo-night-theme .connection-status,
+.tokyo-night-theme .formatting-toolbar .label {
+    -fx-text-fill: -fx-tokyo-fg;
+}
+
+.tokyo-night-theme .formatting-toolbar .button,
+.tokyo-night-theme .formatting-toolbar .toggle-button,
+.tokyo-night-theme .formatting-toolbar .color-picker,
+.tokyo-night-theme .formatting-toolbar .combo-box-base {
+    -fx-background-color: -fx-tokyo-surface;
+    -fx-text-fill: -fx-tokyo-fg;
+    -fx-border-color: -fx-tokyo-surface-lighter;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+
+.tokyo-night-theme .formatting-toolbar .button:hover,
+.tokyo-night-theme .formatting-toolbar .toggle-button:hover,
+.tokyo-night-theme .formatting-toolbar .combo-box-base:hover {
+    -fx-background-color: -fx-tokyo-surface-light;
+}
+
+.tokyo-night-theme .formatting-toolbar .combo-box-base .text,
+.tokyo-night-theme .formatting-toolbar .color-picker .label,
+.tokyo-night-theme .formatting-toolbar .button .text,
+.tokyo-night-theme .formatting-toolbar .toggle-button .text {
+    -fx-fill: -fx-tokyo-fg;
+}
+
+.tokyo-night-theme .rich-text-editor,
+.tokyo-night-theme .rich-text-editor .virtualized-scroll-pane,
+.tokyo-night-theme .rich-text-editor .virtualized-scroll-pane .viewport,
+.tokyo-night-theme .rich-text-editor .virtualized-scroll-pane .content {
+    -fx-background-color: -fx-tokyo-bg;
+}
+
+.tokyo-night-theme .rich-editor-area {
+    -fx-background-color: -fx-tokyo-bg;
+    -fx-control-inner-background: -fx-tokyo-bg;
+    -fx-fill: -fx-tokyo-fg;
+}
+
+.tokyo-night-theme .rich-editor-area .text {
+    -fx-fill: -fx-tokyo-fg;
+}
+
+.tokyo-night-theme .rich-editor-area .caret {
+    -fx-stroke: -fx-tokyo-fg;
 }
 
 .tokyo-night-theme .text-area {
@@ -330,6 +407,19 @@
 .tokyo-night-theme .theme-toggle-button:hover {
     -fx-background-color: -fx-tokyo-surface-light;
     -fx-cursor: hand;
+}
+
+.tokyo-night-theme .editor-theme-toggle-button {
+    -fx-background-color: -fx-tokyo-surface;
+    -fx-border-color: -fx-tokyo-surface-lighter;
+    -fx-text-fill: -fx-tokyo-fg;
+    -fx-min-width: 64;
+    -fx-pref-width: 64;
+    -fx-max-width: 64;
+    -fx-min-height: 30;
+    -fx-pref-height: 30;
+    -fx-max-height: 30;
+    -fx-alignment: CENTER;
 }
 /* Input Fields - Tokyo Night */
 .tokyo-night-theme .input-field-container {

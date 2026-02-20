@@ -21,6 +21,7 @@ public class SettingsManager {
     private static final String DEFAULT_NETWORK_BASE_URL = "http://localhost:8080";
     private static final String DEFAULT_NETWORK_API_KEY = "";
     private static final String DEFAULT_NETWORK_TIMEOUT_SECONDS = "8";
+    private static final String DEFAULT_NETWORK_NAMESPACE = "shared";
     private static final String DEFAULT_STARRED_NOTES = "";
     
     static {
@@ -57,6 +58,7 @@ public class SettingsManager {
         settings.setProperty("network.base_url", DEFAULT_NETWORK_BASE_URL);
         settings.setProperty("network.api_key", DEFAULT_NETWORK_API_KEY);
         settings.setProperty("network.timeout_seconds", DEFAULT_NETWORK_TIMEOUT_SECONDS);
+        settings.setProperty("network.namespace", DEFAULT_NETWORK_NAMESPACE);
         settings.setProperty("starred.notes", DEFAULT_STARRED_NOTES);
         saveSettings();
     }
@@ -147,6 +149,23 @@ public class SettingsManager {
     public static void setNetworkTimeoutSeconds(int timeoutSeconds) {
         int safeTimeout = Math.max(1, Math.min(timeoutSeconds, 60));
         settings.setProperty("network.timeout_seconds", String.valueOf(safeTimeout));
+        saveSettings();
+    }
+
+    public static String getNetworkNamespace() {
+        String raw = settings.getProperty("network.namespace", DEFAULT_NETWORK_NAMESPACE);
+        if (raw == null || raw.isBlank()) {
+            return DEFAULT_NETWORK_NAMESPACE;
+        }
+        return raw.trim();
+    }
+
+    public static void setNetworkNamespace(String namespace) {
+        if (namespace == null || namespace.isBlank()) {
+            settings.setProperty("network.namespace", DEFAULT_NETWORK_NAMESPACE);
+        } else {
+            settings.setProperty("network.namespace", namespace.trim());
+        }
         saveSettings();
     }
 

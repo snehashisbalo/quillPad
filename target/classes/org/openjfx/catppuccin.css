@@ -273,11 +273,31 @@
     -fx-text-fill: -fx-cat-text;
 }
 
+.catppuccin-theme .menu-bar .menu .label,
+.catppuccin-theme .menu-bar .menu-button .label,
+.catppuccin-theme .menu-bar .menu-item .label {
+    -fx-text-fill: -fx-cat-text;
+}
+
 .catppuccin-theme .menu-bar .menu-item {
     -fx-text-fill: -fx-cat-text;
 }
 
 .catppuccin-theme .menu-bar .menu-item:focused {
+    -fx-background-color: -fx-cat-surface1;
+}
+
+.catppuccin-theme .context-menu {
+    -fx-background-color: -fx-cat-mantle;
+    -fx-border-color: -fx-cat-surface1;
+}
+
+.catppuccin-theme .context-menu .menu-item .label {
+    -fx-text-fill: -fx-cat-text;
+}
+
+.catppuccin-theme .context-menu .menu-item:focused,
+.catppuccin-theme .context-menu .menu-item:armed {
     -fx-background-color: -fx-cat-surface1;
 }
 
@@ -299,6 +319,63 @@
 
 .catppuccin-theme .editor-tabs .tab .tab-label {
     -fx-text-fill: -fx-cat-text;
+}
+
+.catppuccin-theme .formatting-toolbar {
+    -fx-background-color: -fx-cat-mantle;
+    -fx-border-color: -fx-cat-surface0;
+    -fx-border-width: 0 0 1 0;
+}
+
+.catppuccin-theme .toolbar-label,
+.catppuccin-theme .connection-status,
+.catppuccin-theme .formatting-toolbar .label {
+    -fx-text-fill: -fx-cat-text;
+}
+
+.catppuccin-theme .formatting-toolbar .button,
+.catppuccin-theme .formatting-toolbar .toggle-button,
+.catppuccin-theme .formatting-toolbar .color-picker,
+.catppuccin-theme .formatting-toolbar .combo-box-base {
+    -fx-background-color: -fx-cat-surface0;
+    -fx-text-fill: -fx-cat-text;
+    -fx-border-color: -fx-cat-surface2;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+
+.catppuccin-theme .formatting-toolbar .button:hover,
+.catppuccin-theme .formatting-toolbar .toggle-button:hover,
+.catppuccin-theme .formatting-toolbar .combo-box-base:hover {
+    -fx-background-color: -fx-cat-surface1;
+}
+
+.catppuccin-theme .formatting-toolbar .combo-box-base .text,
+.catppuccin-theme .formatting-toolbar .color-picker .label,
+.catppuccin-theme .formatting-toolbar .button .text,
+.catppuccin-theme .formatting-toolbar .toggle-button .text {
+    -fx-fill: -fx-cat-text;
+}
+
+.catppuccin-theme .rich-text-editor,
+.catppuccin-theme .rich-text-editor .virtualized-scroll-pane,
+.catppuccin-theme .rich-text-editor .virtualized-scroll-pane .viewport,
+.catppuccin-theme .rich-text-editor .virtualized-scroll-pane .content {
+    -fx-background-color: -fx-cat-base;
+}
+
+.catppuccin-theme .rich-editor-area {
+    -fx-background-color: -fx-cat-base;
+    -fx-control-inner-background: -fx-cat-base;
+    -fx-fill: -fx-cat-text;
+}
+
+.catppuccin-theme .rich-editor-area .text {
+    -fx-fill: -fx-cat-text;
+}
+
+.catppuccin-theme .rich-editor-area .caret {
+    -fx-stroke: -fx-cat-text;
 }
 
 .catppuccin-theme .text-area {
@@ -339,6 +416,19 @@
 .catppuccin-theme .theme-toggle-button:hover {
     -fx-background-color: -fx-cat-surface2;
     -fx-cursor: hand;
+}
+
+.catppuccin-theme .editor-theme-toggle-button {
+    -fx-background-color: -fx-cat-surface0;
+    -fx-border-color: -fx-cat-surface2;
+    -fx-text-fill: -fx-cat-text;
+    -fx-min-width: 64;
+    -fx-pref-width: 64;
+    -fx-max-width: 64;
+    -fx-min-height: 30;
+    -fx-pref-height: 30;
+    -fx-max-height: 30;
+    -fx-alignment: CENTER;
 }
 /* Input Fields - Catppuccin */
 .catppuccin-theme .input-field-container {

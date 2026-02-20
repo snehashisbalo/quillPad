@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
@@ -32,7 +33,9 @@ public class NoteSyncServer {
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/api/health", new HealthHandler());
         server.createContext("/api/notes/sync", new SyncHandler(requiredApiKey));
-        server.createContext("/api/notes", new DeleteHandler(requiredApiKey));
+        server.createContext("/api/notes", new NotesHandler(requiredApiKey));
+        server.createContext("/api/notes/content", new NoteContentHandler(requiredApiKey));
+        server.createContext("/api/notes/by-author", new DeleteByAuthorHandler(requiredApiKey));
         server.setExecutor(Executors.newFixedThreadPool(8));
         server.start();
 
@@ -81,6 +84,7 @@ public class NoteSyncServer {
                 String username = extractJsonString(body, "username");
                 String noteName = extractJsonString(body, "noteName");
                 String content = extractJsonString(body, "content");
+                String author = extractJsonString(body, "author");
 
                 if (isBlank(username) || isBlank(noteName)) {
                     sendJson(exchange, 400, "{\"error\":\"username and noteName are required\"}");
@@ -98,6 +102,9 @@ public class NoteSyncServer {
                 Files.createDirectories(userDir);
                 Path noteFile = userDir.resolve(safeNote + ".txt");
                 Files.writeString(noteFile, content == null ? "" : content, StandardCharsets.UTF_8);
+                Path authorFile = userDir.resolve(safeNote + ".author");
+                String safeAuthor = isBlank(author) ? safeUser : sanitizeSegment(author);
+                Files.writeString(authorFile, safeAuthor, StandardCharsets.UTF_8);
 
                 sendJson(exchange, 200, "{\"status\":\"ok\"}");
             } catch (Exception e) {
@@ -117,10 +124,123 @@ public class NoteSyncServer {
         }
     }
 
-    private static class DeleteHandler implements HttpHandler {
+    private static class NotesHandler implements HttpHandler {
         private final String requiredApiKey;
 
-        private DeleteHandler(String requiredApiKey) {
+        private NotesHandler(String requiredApiKey) {
+            this.requiredApiKey = requiredApiKey;
+        }
+
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            try {
+                if (!isAuthorized(exchange, requiredApiKey)) {
+                    sendJson(exchange, 401, "{\"error\":\"Unauthorized\"}");
+                    return;
+                }
+
+                Map<String, String> query = parseQuery(exchange.getRequestURI());
+                String username = query.get("username");
+                if (isBlank(username)) {
+                    sendJson(exchange, 400, "{\"error\":\"username is required\"}");
+                    return;
+                }
+
+                String safeUser = sanitizeSegment(username);
+                String method = exchange.getRequestMethod();
+                if ("DELETE".equalsIgnoreCase(method)) {
+                    String noteName = query.get("noteName");
+                    if (isBlank(noteName)) {
+                        sendJson(exchange, 400, "{\"error\":\"noteName is required\"}");
+                        return;
+                    }
+                    String safeNote = sanitizeSegment(noteName);
+                    Path noteFile = BASE_DIR.resolve(safeUser).resolve(safeNote + ".txt");
+                    if (Files.exists(noteFile)) {
+                        Files.delete(noteFile);
+                    }
+                    Path authorFile = BASE_DIR.resolve(safeUser).resolve(safeNote + ".author");
+                    if (Files.exists(authorFile)) {
+                        Files.delete(authorFile);
+                    }
+                    sendJson(exchange, 200, "{\"status\":\"ok\"}");
+                    return;
+                }
+                if ("GET".equalsIgnoreCase(method)) {
+                    Path userDir = BASE_DIR.resolve(safeUser);
+                    if (!Files.exists(userDir) || !Files.isDirectory(userDir)) {
+                        sendText(exchange, 200, "");
+                        return;
+                    }
+                    StringBuilder out = new StringBuilder();
+                    try (var stream = Files.list(userDir)) {
+                        stream.filter(Files::isRegularFile)
+                            .map(path -> path.getFileName().toString())
+                            .filter(name -> name.endsWith(".txt"))
+                            .map(name -> name.substring(0, name.length() - 4))
+                            .sorted()
+                            .forEach(name -> {
+                                if (!out.isEmpty()) {
+                                    out.append('\n');
+                                }
+                                out.append(name).append('\t').append(resolveAuthor(userDir, name, safeUser));
+                            });
+                    }
+                    sendText(exchange, 200, out.toString());
+                    return;
+                }
+                sendJson(exchange, 405, "{\"error\":\"Method not allowed\"}");
+            } catch (Exception e) {
+                sendJson(exchange, 500, "{\"error\":\"Internal server error\"}");
+            }
+        }
+    }
+
+    private static class NoteContentHandler implements HttpHandler {
+        private final String requiredApiKey;
+
+        private NoteContentHandler(String requiredApiKey) {
+            this.requiredApiKey = requiredApiKey;
+        }
+
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            try {
+                if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                    sendJson(exchange, 405, "{\"error\":\"Method not allowed\"}");
+                    return;
+                }
+                if (!isAuthorized(exchange, requiredApiKey)) {
+                    sendJson(exchange, 401, "{\"error\":\"Unauthorized\"}");
+                    return;
+                }
+                Map<String, String> query = parseQuery(exchange.getRequestURI());
+                String username = query.get("username");
+                String noteName = query.get("noteName");
+                if (isBlank(username) || isBlank(noteName)) {
+                    sendJson(exchange, 400, "{\"error\":\"username and noteName are required\"}");
+                    return;
+                }
+                String safeUser = sanitizeSegment(username);
+                String safeNote = sanitizeSegment(noteName);
+                Path noteFile = BASE_DIR.resolve(safeUser).resolve(safeNote + ".txt");
+                if (!Files.exists(noteFile)) {
+                    sendJson(exchange, 404, "{\"error\":\"Note not found\"}");
+                    return;
+                }
+                String content = Files.readString(noteFile, StandardCharsets.UTF_8);
+                String author = resolveAuthor(BASE_DIR.resolve(safeUser), safeNote, safeUser);
+                sendText(exchange, 200, content, author);
+            } catch (Exception e) {
+                sendJson(exchange, 500, "{\"error\":\"Internal server error\"}");
+            }
+        }
+    }
+
+    private static class DeleteByAuthorHandler implements HttpHandler {
+        private final String requiredApiKey;
+
+        private DeleteByAuthorHandler(String requiredApiKey) {
             this.requiredApiKey = requiredApiKey;
         }
 
@@ -135,24 +255,41 @@ public class NoteSyncServer {
                     sendJson(exchange, 401, "{\"error\":\"Unauthorized\"}");
                     return;
                 }
-
                 Map<String, String> query = parseQuery(exchange.getRequestURI());
                 String username = query.get("username");
-                String noteName = query.get("noteName");
-                if (isBlank(username) || isBlank(noteName)) {
-                    sendJson(exchange, 400, "{\"error\":\"username and noteName are required\"}");
+                String author = query.get("author");
+                if (isBlank(username) || isBlank(author)) {
+                    sendJson(exchange, 400, "{\"error\":\"username and author are required\"}");
+                    return;
+                }
+                String safeUser = sanitizeSegment(username);
+                String safeAuthor = sanitizeSegment(author);
+                Path userDir = BASE_DIR.resolve(safeUser);
+                if (!Files.exists(userDir) || !Files.isDirectory(userDir)) {
+                    sendJson(exchange, 200, "{\"status\":\"ok\",\"deleted\":0}");
                     return;
                 }
 
-                String safeUser = sanitizeSegment(username);
-                String safeNote = sanitizeSegment(noteName);
-                Path noteFile = BASE_DIR.resolve(safeUser).resolve(safeNote + ".txt");
-
-                if (Files.exists(noteFile)) {
-                    Files.delete(noteFile);
+                int deleted = 0;
+                try (var stream = Files.list(userDir)) {
+                    List<Path> authorFiles = stream
+                        .filter(Files::isRegularFile)
+                        .filter(path -> path.getFileName().toString().endsWith(".author"))
+                        .toList();
+                    for (Path authorFile : authorFiles) {
+                        String fileAuthor = Files.readString(authorFile, StandardCharsets.UTF_8).trim();
+                        if (!safeAuthor.equals(fileAuthor)) {
+                            continue;
+                        }
+                        String fileName = authorFile.getFileName().toString();
+                        String noteBase = fileName.substring(0, fileName.length() - ".author".length());
+                        Path noteFile = userDir.resolve(noteBase + ".txt");
+                        Files.deleteIfExists(noteFile);
+                        Files.deleteIfExists(authorFile);
+                        deleted++;
+                    }
                 }
-
-                sendJson(exchange, 200, "{\"status\":\"ok\"}");
+                sendJson(exchange, 200, "{\"status\":\"ok\",\"deleted\":" + deleted + "}");
             } catch (Exception e) {
                 sendJson(exchange, 500, "{\"error\":\"Internal server error\"}");
             }
@@ -179,6 +316,36 @@ public class NoteSyncServer {
         try (OutputStream os = exchange.getResponseBody()) {
             os.write(response);
         }
+    }
+
+    private static void sendText(HttpExchange exchange, int status, String body) throws IOException {
+        sendText(exchange, status, body, null);
+    }
+
+    private static void sendText(HttpExchange exchange, int status, String body, String author) throws IOException {
+        byte[] response = body.getBytes(StandardCharsets.UTF_8);
+        exchange.getResponseHeaders().set("Content-Type", "text/plain; charset=utf-8");
+        if (author != null && !author.isBlank()) {
+            exchange.getResponseHeaders().set("X-QuillPad-Author", author);
+        }
+        exchange.sendResponseHeaders(status, response.length);
+        try (OutputStream os = exchange.getResponseBody()) {
+            os.write(response);
+        }
+    }
+
+    private static String resolveAuthor(Path userDir, String safeNote, String fallback) {
+        try {
+            Path authorFile = userDir.resolve(safeNote + ".author");
+            if (Files.exists(authorFile)) {
+                String author = Files.readString(authorFile, StandardCharsets.UTF_8).trim();
+                if (!author.isBlank()) {
+                    return author;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return fallback;
     }
 
     private static String extractJsonString(String json, String key) {

@@ -106,6 +106,17 @@
                     </VBox.margin>
                 </Button>
 
+                <Button fx:id="resetStorageButton"
+                        text="🧹 Reset Storage"
+                        styleClass="sidebar-button"
+                        onAction="#handleResetStorage"
+                        maxWidth="Infinity"
+                        prefHeight="40">
+                    <VBox.margin>
+                        <Insets bottom="5"/>
+                    </VBox.margin>
+                </Button>
+
                 <!-- Theme Toggle Button -->
                 <Button fx:id="themeToggleButton"
                         text="🌸 Theme"
@@ -186,9 +197,25 @@
                             </HBox.margin>
                         </Button>
                         <Button fx:id="syncButton"
-                                text="☁️ Sync"
+                                text="⬆ Upload All"
                                 styleClass="icon-button"
                                 onAction="#handleSync">
+                            <HBox.margin>
+                                <Insets left="8"/>
+                            </HBox.margin>
+                        </Button>
+                        <Button fx:id="uploadButton"
+                                text="⬆ Upload Selected"
+                                styleClass="icon-button"
+                                onAction="#handleUploadSelected">
+                            <HBox.margin>
+                                <Insets left="8"/>
+                            </HBox.margin>
+                        </Button>
+                        <Button fx:id="remoteButton"
+                                text="⬇ Download Remote"
+                                styleClass="icon-button"
+                                onAction="#handleRemoteBrowse">
                             <HBox.margin>
                                 <Insets left="8"/>
                             </HBox.margin>

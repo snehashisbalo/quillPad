@@ -66,8 +66,8 @@ public class QuillPad extends Application {
         ThemeManager.registerScene(editorScene);
         EditorController controller = loader.getController();
         controller.setMainApp(this);
-        controller.setCurrentNote(noteName);
         controller.setCurrentUser(currentUser);
+        controller.setCurrentNote(noteName);
     }
 
     public void showLogin() {

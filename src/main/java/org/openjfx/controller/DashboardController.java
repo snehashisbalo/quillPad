@@ -1,5 +1,8 @@
 package org.openjfx.controller;
 
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -11,6 +14,7 @@ import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import org.openjfx.QuillPad;
 import org.openjfx.SettingsManager;
@@ -20,9 +24,11 @@ import org.openjfx.network.NetworkSyncService;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 public class DashboardController implements Initializable {
 
@@ -57,10 +63,19 @@ public class DashboardController implements Initializable {
     private Button syncButton;
 
     @FXML
+    private Button uploadButton;
+
+    @FXML
+    private Button remoteButton;
+
+    @FXML
     private Button themeToggleButton;
 
     @FXML
     private Button settingsButton;
+
+    @FXML
+    private Button resetStorageButton;
 
     @FXML
     private HBox homeNavItem;
@@ -97,21 +112,18 @@ public class DashboardController implements Initializable {
         if (welcomeLabel != null) {
             welcomeLabel.setText("Welcome back, " + username + "!");
         }
+        configureStoragePaths();
+        if (allNotes != null) {
+            loadRecentProjects(currentView);
+            updateStats();
+        }
     }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        notesDir = new File("notes");
-        if (!notesDir.exists()) {
-            notesDir.mkdir();
-        }
-        trashDir = new File(notesDir, "trash");
-        if (!trashDir.exists()) {
-            trashDir.mkdir();
-        }
-
         starredNotes = new LinkedHashSet<>(SettingsManager.getStarredNotes());
         allNotes = FXCollections.observableArrayList();
+        configureStoragePaths();
         loadRecentProjects(currentView);
         updateStats();
 
@@ -272,7 +284,7 @@ public class DashboardController implements Initializable {
                         loadRecentProjects(DashboardView.TRASH);
                         updateStats();
                         showInfo("Note permanently deleted");
-                        NetworkSyncService.deleteNoteAsync(currentUser, selectedNote);
+                        NetworkSyncService.deleteNoteAsync(remoteNamespace(), selectedNote);
                     } else {
                         showError("Failed to delete note");
                     }
@@ -301,13 +313,7 @@ public class DashboardController implements Initializable {
 
     @FXML
     private void handleSync(ActionEvent event) {
-        if (currentUser == null || currentUser.isBlank()) {
-            showError("No active user session. Please log out and log in again.");
-            return;
-        }
-
-        if (!NetworkSyncService.isConfigured()) {
-            showError("Network sync is disabled. Open Settings and enable Network Sync first.");
+        if (!validateRemoteFeaturePrerequisites()) {
             return;
         }
 
@@ -315,16 +321,16 @@ public class DashboardController implements Initializable {
             syncButton.setDisable(true);
         }
 
-        NetworkSyncService.syncAllNotesAsync(currentUser, notesDir)
+        NetworkSyncService.syncAllNotesAsync(remoteNamespace(), currentUser, notesDir)
             .whenComplete((summary, throwable) -> Platform.runLater(() -> {
                 if (syncButton != null) {
                     syncButton.setDisable(false);
                 }
                 if (throwable != null) {
-                    showError("Sync failed: " + throwable.getMessage());
+                    showError("Upload failed: " + throwable.getMessage());
                     return;
                 }
-                StringBuilder message = new StringBuilder("Sync complete.\nAttempted: " + summary.attempted()
+                StringBuilder message = new StringBuilder("Upload all complete.\nAttempted: " + summary.attempted()
                     + "\nSucceeded: " + summary.success()
                     + "\nFailed: " + summary.failed());
                 if (summary.failed() > 0 && summary.errorSamples() != null && !summary.errorSamples().isEmpty()) {
@@ -335,6 +341,384 @@ public class DashboardController implements Initializable {
                 }
                 showInfo(message.toString());
             }));
+    }
+
+    @FXML
+    private void handleRemoteBrowse(ActionEvent event) {
+        if (!validateRemoteFeaturePrerequisites()) {
+            return;
+        }
+
+        if (remoteButton != null) {
+            remoteButton.setDisable(true);
+        }
+
+        NetworkSyncService.listRemoteNotesDetailedAsync(remoteNamespace())
+            .whenComplete((notes, throwable) -> Platform.runLater(() -> {
+                if (remoteButton != null) {
+                    remoteButton.setDisable(false);
+                }
+                if (throwable != null) {
+                    showError("Failed to fetch remote notes: " + throwable.getMessage());
+                    return;
+                }
+                showRemoteNotesDialog(notes == null ? List.of() : notes);
+            }));
+    }
+
+    @FXML
+    private void handleUploadSelected(ActionEvent event) {
+        if (!validateRemoteFeaturePrerequisites()) {
+            return;
+        }
+
+        List<String> localNotes = listLocalNotesForUpload();
+        if (localNotes.isEmpty()) {
+            showInfo("No local notes found to upload.");
+            return;
+        }
+
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Upload Selected Notes");
+        dialog.setHeaderText("Select local notes to upload to server");
+        dialog.getDialogPane().setPrefSize(700, 480);
+
+        ObservableList<String> notesModel = FXCollections.observableArrayList(localNotes);
+        ListView<String> listView = new ListView<>(notesModel);
+        listView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        listView.setPrefSize(660, 360);
+
+        Label hint = new Label("Tip: use Ctrl/Cmd click or Shift to select multiple notes.");
+        VBox content = new VBox(10, hint, listView);
+        content.setPadding(new Insets(8, 4, 4, 4));
+        dialog.getDialogPane().setContent(content);
+
+        ButtonType uploadButtonType = new ButtonType("Upload Selected", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(uploadButtonType, ButtonType.CANCEL);
+        Button uploadBtn = (Button) dialog.getDialogPane().lookupButton(uploadButtonType);
+        uploadBtn.disableProperty().bind(listView.getSelectionModel().selectedItemProperty().isNull());
+
+        Optional<ButtonType> result = dialog.showAndWait();
+        if (result.isEmpty() || result.get() != uploadButtonType) {
+            return;
+        }
+
+        List<String> selected = new ArrayList<>(listView.getSelectionModel().getSelectedItems());
+        if (selected.isEmpty()) {
+            return;
+        }
+
+        if (uploadButton != null) {
+            uploadButton.setDisable(true);
+        }
+        NetworkSyncService.syncSelectedNotesAsync(remoteNamespace(), currentUser, notesDir, selected)
+            .whenComplete((summary, throwable) -> Platform.runLater(() -> {
+                if (uploadButton != null) {
+                    uploadButton.setDisable(false);
+                }
+                if (throwable != null) {
+                    showError("Upload failed: " + throwable.getMessage());
+                    return;
+                }
+                StringBuilder message = new StringBuilder("Upload complete.\nSelected: " + summary.attempted()
+                    + "\nSucceeded: " + summary.success()
+                    + "\nFailed: " + summary.failed());
+                if (summary.failed() > 0 && summary.errorSamples() != null && !summary.errorSamples().isEmpty()) {
+                    message.append("\n\nSample errors:");
+                    for (String error : summary.errorSamples()) {
+                        message.append("\n- ").append(error);
+                    }
+                }
+                showInfo(message.toString());
+            }));
+    }
+
+    @FXML
+    private void handleResetStorage(ActionEvent event) {
+        if (currentUser == null || currentUser.isBlank()) {
+            showError("No active user session. Please log out and log in again.");
+            return;
+        }
+
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Reset Storage");
+        String namespace = remoteNamespace();
+        confirm.setHeaderText("Reset local storage + your remote files?");
+        confirm.setContentText("This will delete local notes for \"" + currentUser + "\" and ONLY remote files authored by \"" + currentUser + "\" in namespace \"" + namespace + "\".");
+        Optional<ButtonType> choice = confirm.showAndWait();
+        if (choice.isEmpty() || choice.get() != ButtonType.OK) {
+            return;
+        }
+
+        try {
+            clearDirectoryContents(notesDir.toPath());
+            Files.createDirectories(trashDir.toPath());
+        } catch (IOException ex) {
+            showError("Failed to reset storage: " + ex.getMessage());
+            return;
+        }
+
+        if (NetworkSyncService.isConfigured()) {
+            NetworkSyncService.deleteRemoteByAuthorAsync(namespace, currentUser)
+                .whenComplete((deletedCount, throwable) -> Platform.runLater(() -> {
+                    loadRecentProjects(DashboardView.MY_NOTES);
+                    updateStats();
+                    if (throwable != null) {
+                        showError("Local reset completed, but remote cleanup failed: " + throwable.getMessage());
+                        return;
+                    }
+                    showInfo("Storage reset complete.\nLocal user: " + currentUser
+                        + "\nRemote namespace: " + namespace
+                        + "\nRemote files deleted (author-matched): " + deletedCount);
+                }));
+        } else {
+            loadRecentProjects(DashboardView.MY_NOTES);
+            updateStats();
+            showInfo("Local storage reset complete. Network sync is disabled, so remote files were not changed.");
+        }
+    }
+
+    private void showRemoteNotesDialog(List<NetworkSyncService.RemoteNoteRef> remoteNotes) {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Remote Notes");
+        dialog.setHeaderText("Browse notes stored on the server");
+        dialog.getDialogPane().setPrefSize(700, 480);
+
+        ObservableList<NetworkSyncService.RemoteNoteRef> notesModel = FXCollections.observableArrayList(remoteNotes);
+        ListView<NetworkSyncService.RemoteNoteRef> listView = new ListView<>(notesModel);
+        listView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        listView.setPrefSize(660, 360);
+        listView.setCellFactory(v -> new ListCell<>() {
+            @Override
+            protected void updateItem(NetworkSyncService.RemoteNoteRef item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    return;
+                }
+                String author = (item.author() == null || item.author().isBlank()) ? "unknown" : item.author();
+                setText(item.noteName() + "   (author: " + author + ")");
+            }
+        });
+
+        Label hint = new Label("Select one or more remote notes to download locally. Author is shown beside each file.");
+        VBox content = new VBox(10, hint, listView);
+        content.setPadding(new Insets(8, 4, 4, 4));
+        dialog.getDialogPane().setContent(content);
+
+        ButtonType downloadButtonType = new ButtonType("Download Selected", ButtonBar.ButtonData.OK_DONE);
+        ButtonType refreshButtonType = new ButtonType("Refresh");
+        dialog.getDialogPane().getButtonTypes().addAll(downloadButtonType, refreshButtonType, ButtonType.CLOSE);
+
+        Button downloadButton = (Button) dialog.getDialogPane().lookupButton(downloadButtonType);
+        Button refreshButton = (Button) dialog.getDialogPane().lookupButton(refreshButtonType);
+        BooleanProperty downloadInProgress = new SimpleBooleanProperty(false);
+        downloadButton.disableProperty().bind(
+            Bindings.or(listView.getSelectionModel().selectedItemProperty().isNull(), downloadInProgress)
+        );
+
+        refreshButton.addEventFilter(ActionEvent.ACTION, e -> {
+            e.consume();
+            refreshButton.setDisable(true);
+            NetworkSyncService.listRemoteNotesDetailedAsync(remoteNamespace())
+                .whenComplete((notes, throwable) -> Platform.runLater(() -> {
+                    refreshButton.setDisable(false);
+                    if (throwable != null) {
+                        showError("Refresh failed: " + throwable.getMessage());
+                        return;
+                    }
+                    notesModel.setAll(notes == null ? List.of() : notes);
+                }));
+        });
+
+        downloadButton.addEventFilter(ActionEvent.ACTION, e -> {
+            e.consume();
+            List<NetworkSyncService.RemoteNoteRef> selected = new ArrayList<>(listView.getSelectionModel().getSelectedItems());
+            if (selected.isEmpty()) {
+                return;
+            }
+            downloadInProgress.set(true);
+            downloadRemoteNotes(selected)
+                .whenComplete((summary, throwable) -> Platform.runLater(() -> {
+                    downloadInProgress.set(false);
+                    if (throwable != null) {
+                        showError("Download failed: " + throwable.getMessage());
+                        return;
+                    }
+                    loadRecentProjects(DashboardView.MY_NOTES);
+                    updateStats();
+                    StringBuilder message = new StringBuilder("Download complete.\nSelected: " + summary.attempted()
+                        + "\nSucceeded: " + summary.success()
+                        + "\nFailed: " + summary.failed());
+                    if (summary.success() > 0 && !summary.savedFiles().isEmpty()) {
+                        message.append("\n\nSaved files:");
+                        for (String file : summary.savedFiles()) {
+                            message.append("\n- ").append(file);
+                        }
+                    }
+                    if (summary.failed() > 0 && !summary.errors().isEmpty()) {
+                        message.append("\n\nSample errors:");
+                        for (String error : summary.errors()) {
+                            message.append("\n- ").append(error);
+                        }
+                    }
+                    showInfo(message.toString());
+                }));
+        });
+
+        dialog.showAndWait();
+    }
+
+    private File resolveLocalTarget(String noteName) {
+        String safeName = sanitizeName(noteName);
+        File target = new File(notesDir, safeName + ".txt");
+        if (!target.exists()) {
+            return target;
+        }
+        return new File(notesDir, safeName + "-remote-" + System.currentTimeMillis() + ".txt");
+    }
+
+    private List<String> listLocalNotesForUpload() {
+        List<String> notes = new ArrayList<>();
+        File[] files = notesDir.listFiles((dir, name) -> !name.startsWith(".") && new File(dir, name).isFile());
+        if (files == null) {
+            return notes;
+        }
+        Arrays.sort(files, Comparator.comparing(File::getName));
+        for (File file : files) {
+            notes.add(removeExtension(file.getName()));
+        }
+        return notes;
+    }
+
+    private CompletableFuture<DownloadSummary> downloadRemoteNotes(List<NetworkSyncService.RemoteNoteRef> noteRefs) {
+        if (noteRefs == null || noteRefs.isEmpty()) {
+            return CompletableFuture.completedFuture(new DownloadSummary(0, 0, 0, List.of(), List.of()));
+        }
+        return CompletableFuture.supplyAsync(() -> {
+            int attempted = noteRefs.size();
+            int success = 0;
+            int failed = 0;
+            List<String> errors = new ArrayList<>();
+            List<String> savedFiles = new ArrayList<>();
+
+            for (NetworkSyncService.RemoteNoteRef ref : noteRefs) {
+                String noteName = ref.noteName();
+                try {
+                    NetworkSyncService.RemoteNote note =
+                        NetworkSyncService.downloadRemoteNoteAsync(remoteNamespace(), noteName).join();
+                    if (note == null) {
+                        failed++;
+                        if (errors.size() < 3) {
+                            errors.add(noteName + ": not found");
+                        }
+                        continue;
+                    }
+                    File target = resolveLocalTarget(note.noteName());
+                    Files.writeString(target.toPath(), note.content());
+                    success++;
+                    if (savedFiles.size() < 5) {
+                        savedFiles.add(removeExtension(target.getName()));
+                    }
+                } catch (Exception e) {
+                    failed++;
+                    if (errors.size() < 3) {
+                        String message = (e.getMessage() == null || e.getMessage().isBlank())
+                            ? e.getClass().getSimpleName()
+                            : e.getMessage();
+                        errors.add(noteName + ": " + message);
+                    }
+                }
+            }
+            return new DownloadSummary(attempted, success, failed, errors, savedFiles);
+        });
+    }
+
+    private record DownloadSummary(int attempted, int success, int failed, List<String> errors, List<String> savedFiles) {
+    }
+
+    private String sanitizeName(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return "Untitled";
+        }
+        return raw.replaceAll("[^a-zA-Z0-9._-]", "_");
+    }
+
+    private String remoteNamespace() {
+        return sanitizeName(SettingsManager.getNetworkNamespace());
+    }
+
+    private boolean validateRemoteFeaturePrerequisites() {
+        if (currentUser == null || currentUser.isBlank()) {
+            showError("No active user session. Please log out and log in again.");
+            return false;
+        }
+        if (!NetworkSyncService.isConfigured()) {
+            showError("Network sync is disabled. Open Settings and enable Network Sync first.");
+            return false;
+        }
+        return true;
+    }
+
+    private void configureStoragePaths() {
+        String userSegment = (currentUser == null || currentUser.isBlank())
+            ? "default"
+            : sanitizeName(currentUser);
+        notesDir = new File("notes/" + userSegment);
+        if (!notesDir.exists()) {
+            notesDir.mkdirs();
+        }
+        migrateLegacyRootNotesIfNeeded(notesDir);
+        trashDir = new File(notesDir, "trash");
+        if (!trashDir.exists()) {
+            trashDir.mkdirs();
+        }
+    }
+
+    private void migrateLegacyRootNotesIfNeeded(File userNotesDir) {
+        File rootNotesDir = new File("notes");
+        if (!rootNotesDir.exists() || !rootNotesDir.isDirectory()) {
+            return;
+        }
+        File[] legacyFiles = rootNotesDir.listFiles((dir, name) -> {
+            File file = new File(dir, name);
+            return file.isFile() && !name.startsWith(".");
+        });
+        if (legacyFiles == null || legacyFiles.length == 0) {
+            return;
+        }
+        for (File legacy : legacyFiles) {
+            File target = new File(userNotesDir, legacy.getName());
+            if (target.exists()) {
+                continue;
+            }
+            try {
+                Files.move(legacy.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException ignored) {
+            }
+        }
+    }
+
+    private void clearDirectoryContents(Path dir) throws IOException {
+        if (!Files.exists(dir) || !Files.isDirectory(dir)) {
+            return;
+        }
+        try (var stream = Files.list(dir)) {
+            for (Path child : stream.toList()) {
+                deleteRecursively(child);
+            }
+        }
+    }
+
+    private void deleteRecursively(Path path) throws IOException {
+        if (Files.isDirectory(path)) {
+            try (var stream = Files.list(path)) {
+                for (Path child : stream.toList()) {
+                    deleteRecursively(child);
+                }
+            }
+        }
+        Files.deleteIfExists(path);
     }
 
     private void showInfo(String message) {
@@ -421,11 +805,17 @@ public class DashboardController implements Initializable {
         grid.add(networkUrlLabel, 0, 4);
         grid.add(networkUrlField, 1, 4);
 
+        Label namespaceLabel = new Label("Sync Namespace:");
+        TextField namespaceField = new TextField(SettingsManager.getNetworkNamespace());
+        namespaceField.setPromptText("shared");
+        grid.add(namespaceLabel, 0, 5);
+        grid.add(namespaceField, 1, 5);
+
         Label apiKeyLabel = new Label("API Key:");
         PasswordField apiKeyField = new PasswordField();
         apiKeyField.setText(SettingsManager.getNetworkApiKey());
-        grid.add(apiKeyLabel, 0, 5);
-        grid.add(apiKeyField, 1, 5);
+        grid.add(apiKeyLabel, 0, 6);
+        grid.add(apiKeyField, 1, 6);
 
         dialog.getDialogPane().setContent(grid);
 
@@ -449,6 +839,7 @@ public class DashboardController implements Initializable {
             // Save network settings
             SettingsManager.setNetworkEnabled(networkEnabled.isSelected());
             SettingsManager.setNetworkBaseUrl(networkUrlField.getText());
+            SettingsManager.setNetworkNamespace(namespaceField.getText());
             SettingsManager.setNetworkApiKey(apiKeyField.getText());
 
             showInfo("Settings saved successfully!\nChanges will apply to new tabs.");
