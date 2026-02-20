@@ -15,6 +15,7 @@ import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import org.openjfx.QuillPad;
 import org.openjfx.SettingsManager;
+import org.openjfx.network.NetworkSyncService;
 
 import java.io.*;
 import java.net.URL;
@@ -474,6 +475,15 @@ public class EditorController implements Initializable {
             tabFilePathMap.put(tab, file.getAbsolutePath());
             markTabModified(tab, false);
             fileStatusLabel.setText("Saved: " + file.getName());
+            if (currentUser != null && !currentUser.isBlank() && NetworkSyncService.isConfigured()) {
+                String noteName = file.getName().replaceFirst("\\.[^.]+$", "");
+                NetworkSyncService.syncNoteAsync(currentUser, noteName, content)
+                    .thenAccept(synced -> Platform.runLater(() -> {
+                        if (synced) {
+                            fileStatusLabel.setText("Saved + Synced: " + file.getName());
+                        }
+                    }));
+            }
             return true;
         } catch (IOException e) {
             fileStatusLabel.setText("Error saving file");

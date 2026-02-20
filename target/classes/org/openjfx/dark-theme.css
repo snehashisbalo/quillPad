@@ -111,6 +111,18 @@
     -fx-border-color: #3c3c3c;
 }
 
+.dark-theme .sidebar HBox.sidebar-btn-text:hover {
+    -fx-background-color: #3a3d46;
+}
+
+.dark-theme .sidebar HBox.sidebar-btn-text .label {
+    -fx-text-fill: #d6d6d6;
+}
+
+.dark-theme .sidebar HBox.sidebar-btn-text:hover .label {
+    -fx-text-fill: #7fc1ff;
+}
+
 .dark-theme .sidebar-title {
     -fx-text-fill: #007acc;
 }
@@ -312,6 +324,22 @@
 .dark-theme .input-field-container {
     -fx-background-color: #505050;
     -fx-border-color: #606060;
+}
+
+.dark-theme .login-container .input-field-container {
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+}
+
+.dark-theme .login-container .form-input,
+.dark-theme .login-container .form-input:focused {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-insets: 0;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-effect: null;
 }
 
 .dark-theme .form-input {

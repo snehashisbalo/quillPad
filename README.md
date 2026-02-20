@@ -20,6 +20,7 @@ A production-grade JavaFX IDE with comprehensive features for software developme
 - **File Explorer**: Side panel showing project structure
 - **Multiple Encoding Support**: UTF-8 encoding by default
 - **Recent Sessions**: Saves and restores recent files
+- **Optional Network Sync**: Sync notes to a remote HTTP server
 
 ### View Features
 
@@ -141,6 +142,38 @@ Settings are stored in:
 
 - Linux/macOS: `~/.quillpad/`
 - Windows: `%USERPROFILE%\.quillpad\`
+
+### Network Sync
+
+Network sync is configured from `Dashboard -> Settings`:
+
+- Enable Network Sync
+- Server URL (default: `http://localhost:8080`)
+- API Key (optional, sent as `X-API-Key`)
+
+Current HTTP contract used by QuillPad:
+
+1. Upsert note
+   - `POST /api/notes/sync`
+   - JSON body: `{"username":"...","noteName":"...","content":"..."}`
+2. Delete note
+   - `DELETE /api/notes?username=<user>&noteName=<note>`
+
+### Local Test Backend (Included)
+
+This repo now includes a small backend server that implements the sync API.
+
+1. Start server
+   - `./run-backend.sh`
+   - custom port: `./run-backend.sh 9090`
+2. Optional API key protection
+   - `export QUILLPAD_API_KEY=my-secret`
+   - then run `./run-backend.sh`
+3. Data location
+   - saved under `remote-notes/<username>/<noteName>.txt`
+4. Point QuillPad settings to this server
+   - Server URL: `http://localhost:8080` (or your custom port)
+   - API Key: same value as `QUILLPAD_API_KEY` if enabled
 
 ## Future Enhancements
 

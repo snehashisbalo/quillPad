@@ -6,16 +6,21 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Insets;
+import javafx.application.Platform;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.text.Font;
 import org.openjfx.QuillPad;
 import org.openjfx.SettingsManager;
 import org.openjfx.ThemeManager;
+import org.openjfx.network.NetworkSyncService;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.net.URL;
 import java.util.*;
 
@@ -49,15 +54,39 @@ public class DashboardController implements Initializable {
     private Button refreshButton;
 
     @FXML
+    private Button syncButton;
+
+    @FXML
     private Button themeToggleButton;
 
     @FXML
     private Button settingsButton;
 
+    @FXML
+    private HBox homeNavItem;
+
+    @FXML
+    private HBox myNotesNavItem;
+
+    @FXML
+    private HBox starredNavItem;
+
+    @FXML
+    private HBox trashNavItem;
+
     private QuillPad mainApp;
     private File notesDir;
+    private File trashDir;
     private String currentUser;
     private ObservableList<String> allNotes;
+    private DashboardView currentView = DashboardView.MY_NOTES;
+    private Set<String> starredNotes;
+
+    private enum DashboardView {
+        MY_NOTES,
+        STARRED,
+        TRASH
+    }
 
     public void setMainApp(QuillPad mainApp) {
         this.mainApp = mainApp;
@@ -76,9 +105,14 @@ public class DashboardController implements Initializable {
         if (!notesDir.exists()) {
             notesDir.mkdir();
         }
+        trashDir = new File(notesDir, "trash");
+        if (!trashDir.exists()) {
+            trashDir.mkdir();
+        }
 
+        starredNotes = new LinkedHashSet<>(SettingsManager.getStarredNotes());
         allNotes = FXCollections.observableArrayList();
-        loadRecentProjects();
+        loadRecentProjects(currentView);
         updateStats();
 
         if (searchField != null) {
@@ -94,30 +128,36 @@ public class DashboardController implements Initializable {
             });
         }
 
+        setupNoteListContextMenu();
         // Initialize theme button
         updateThemeButton();
     }
 
-    private void loadRecentProjects() {
+    private void loadRecentProjects(DashboardView view) {
+        currentView = view;
         allNotes.clear();
-        if (notesDir.exists() && notesDir.isDirectory()) {
-            // Show all files except hidden files (starting with .)
-            File[] files = notesDir.listFiles((dir, name) -> !name.startsWith("."));
+        File sourceDir = (view == DashboardView.TRASH) ? trashDir : notesDir;
+        if (sourceDir.exists() && sourceDir.isDirectory()) {
+            File[] files = sourceDir.listFiles((dir, name) -> {
+                File file = new File(dir, name);
+                if (!file.isFile()) {
+                    return false;
+                }
+                return !name.startsWith(".");
+            });
             if (files != null) {
                 Arrays.sort(files, (f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
-
                 for (File file : files) {
-                    String noteName = file.getName();
-                    // Remove extension for display
-                    int lastDot = noteName.lastIndexOf('.');
-                    if (lastDot > 0) {
-                        noteName = noteName.substring(0, lastDot);
+                    String noteName = removeExtension(file.getName());
+                    if (view == DashboardView.STARRED && !starredNotes.contains(noteName)) {
+                        continue;
                     }
                     allNotes.add(noteName);
                 }
             }
         }
         recentProjectsList.setItems(allNotes);
+        updateViewUI();
     }
 
     private void filterNotes(String searchText) {
@@ -138,17 +178,43 @@ public class DashboardController implements Initializable {
     private void updateStats() {
         if (statsLabel != null) {
             int noteCount = allNotes.size();
-            statsLabel.setText(noteCount + " note" + (noteCount != 1 ? "s" : "") + " available");
+            String prefix;
+            if (currentView == DashboardView.STARRED) {
+                prefix = "starred ";
+            } else if (currentView == DashboardView.TRASH) {
+                prefix = "trashed ";
+            } else {
+                prefix = "";
+            }
+            statsLabel.setText(noteCount + " " + prefix + "note" + (noteCount != 1 ? "s" : "") + " available");
         }
     }
 
     @FXML
     private void handleHome(ActionEvent event) {
-        loadRecentProjects();
+        loadRecentProjects(DashboardView.MY_NOTES);
         updateStats();
         if (searchField != null) {
             searchField.clear();
         }
+    }
+
+    @FXML
+    private void handleMyNotes(MouseEvent event) {
+        loadRecentProjects(DashboardView.MY_NOTES);
+        updateStats();
+    }
+
+    @FXML
+    private void handleStarred(MouseEvent event) {
+        loadRecentProjects(DashboardView.STARRED);
+        updateStats();
+    }
+
+    @FXML
+    private void handleTrash(MouseEvent event) {
+        loadRecentProjects(DashboardView.TRASH);
+        updateStats();
     }
 
     @FXML
@@ -174,7 +240,11 @@ public class DashboardController implements Initializable {
         if (event.getClickCount() == 2) {
             String selectedNote = recentProjectsList.getSelectionModel().getSelectedItem();
             if (selectedNote != null) {
-                mainApp.showEditor(selectedNote);
+                if (currentView == DashboardView.TRASH) {
+                    restoreNoteFromTrash(selectedNote);
+                } else {
+                    mainApp.showEditor(selectedNote);
+                }
             }
         }
     }
@@ -184,19 +254,36 @@ public class DashboardController implements Initializable {
         String selectedNote = recentProjectsList.getSelectionModel().getSelectedItem();
         if (selectedNote != null) {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Delete Note");
-            alert.setHeaderText("Delete \"" + selectedNote + "\"?");
-            alert.setContentText("This action cannot be undone.");
+            if (currentView == DashboardView.TRASH) {
+                alert.setTitle("Delete Permanently");
+                alert.setHeaderText("Permanently delete \"" + selectedNote + "\"?");
+                alert.setContentText("This action cannot be undone.");
+            } else {
+                alert.setTitle("Move to Trash");
+                alert.setHeaderText("Move \"" + selectedNote + "\" to Trash?");
+                alert.setContentText("You can restore it later from Trash.");
+            }
 
             Optional<ButtonType> result = alert.showAndWait();
             if (result.isPresent() && result.get() == ButtonType.OK) {
-                File fileToDelete = new File("notes/" + selectedNote + ".txt");
-                if (fileToDelete.delete()) {
-                    loadRecentProjects();
-                    updateStats();
-                    showInfo("Note deleted successfully");
+                if (currentView == DashboardView.TRASH) {
+                    File fileToDelete = new File(trashDir, selectedNote + ".txt");
+                    if (fileToDelete.delete()) {
+                        loadRecentProjects(DashboardView.TRASH);
+                        updateStats();
+                        showInfo("Note permanently deleted");
+                        NetworkSyncService.deleteNoteAsync(currentUser, selectedNote);
+                    } else {
+                        showError("Failed to delete note");
+                    }
                 } else {
-                    showError("Failed to delete note");
+                    if (moveNoteToTrash(selectedNote)) {
+                        loadRecentProjects(currentView);
+                        updateStats();
+                        showInfo("Note moved to trash");
+                    } else {
+                        showError("Failed to move note to trash");
+                    }
                 }
             }
         }
@@ -204,12 +291,50 @@ public class DashboardController implements Initializable {
 
     @FXML
     private void handleRefresh(ActionEvent event) {
-        loadRecentProjects();
+        loadRecentProjects(currentView);
         updateStats();
         if (searchField != null) {
             searchField.clear();
         }
         showInfo("Notes refreshed");
+    }
+
+    @FXML
+    private void handleSync(ActionEvent event) {
+        if (currentUser == null || currentUser.isBlank()) {
+            showError("No active user session. Please log out and log in again.");
+            return;
+        }
+
+        if (!NetworkSyncService.isConfigured()) {
+            showError("Network sync is disabled. Open Settings and enable Network Sync first.");
+            return;
+        }
+
+        if (syncButton != null) {
+            syncButton.setDisable(true);
+        }
+
+        NetworkSyncService.syncAllNotesAsync(currentUser, notesDir)
+            .whenComplete((summary, throwable) -> Platform.runLater(() -> {
+                if (syncButton != null) {
+                    syncButton.setDisable(false);
+                }
+                if (throwable != null) {
+                    showError("Sync failed: " + throwable.getMessage());
+                    return;
+                }
+                StringBuilder message = new StringBuilder("Sync complete.\nAttempted: " + summary.attempted()
+                    + "\nSucceeded: " + summary.success()
+                    + "\nFailed: " + summary.failed());
+                if (summary.failed() > 0 && summary.errorSamples() != null && !summary.errorSamples().isEmpty()) {
+                    message.append("\n\nSample errors:");
+                    for (String error : summary.errorSamples()) {
+                        message.append("\n- ").append(error);
+                    }
+                }
+                showInfo(message.toString());
+            }));
     }
 
     private void showInfo(String message) {
@@ -229,7 +354,7 @@ public class DashboardController implements Initializable {
     }
 
     public void refreshList() {
-        loadRecentProjects();
+        loadRecentProjects(currentView);
         updateStats();
     }
 
@@ -285,6 +410,23 @@ public class DashboardController implements Initializable {
         grid.add(themeLabel, 0, 2);
         grid.add(themeCombo, 1, 2);
 
+        // Network Settings
+        CheckBox networkEnabled = new CheckBox("Enable Network Sync");
+        networkEnabled.setSelected(SettingsManager.isNetworkEnabled());
+        grid.add(networkEnabled, 0, 3, 2, 1);
+
+        Label networkUrlLabel = new Label("Server URL:");
+        TextField networkUrlField = new TextField(SettingsManager.getNetworkBaseUrl());
+        networkUrlField.setPromptText("http://localhost:8080");
+        grid.add(networkUrlLabel, 0, 4);
+        grid.add(networkUrlField, 1, 4);
+
+        Label apiKeyLabel = new Label("API Key:");
+        PasswordField apiKeyField = new PasswordField();
+        apiKeyField.setText(SettingsManager.getNetworkApiKey());
+        grid.add(apiKeyLabel, 0, 5);
+        grid.add(apiKeyField, 1, 5);
+
         dialog.getDialogPane().setContent(grid);
 
         Optional<ButtonType> result = dialog.showAndWait();
@@ -304,7 +446,145 @@ public class DashboardController implements Initializable {
                 ThemeManager.setTheme(ThemeManager.Theme.values()[themeIndex]);
             }
 
+            // Save network settings
+            SettingsManager.setNetworkEnabled(networkEnabled.isSelected());
+            SettingsManager.setNetworkBaseUrl(networkUrlField.getText());
+            SettingsManager.setNetworkApiKey(apiKeyField.getText());
+
             showInfo("Settings saved successfully!\nChanges will apply to new tabs.");
+        }
+    }
+
+    private void setupNoteListContextMenu() {
+        recentProjectsList.setCellFactory(listView -> {
+            ListCell<String> cell = new ListCell<>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                    } else if (currentView == DashboardView.STARRED) {
+                        setText("★ " + item);
+                    } else {
+                        setText(item);
+                    }
+                }
+            };
+
+            MenuItem toggleStarItem = new MenuItem("Toggle Star");
+            toggleStarItem.setOnAction(e -> {
+                String note = cell.getItem();
+                if (note != null && currentView != DashboardView.TRASH) {
+                    toggleStar(note);
+                }
+            });
+
+            MenuItem restoreItem = new MenuItem("Restore from Trash");
+            restoreItem.setOnAction(e -> {
+                String note = cell.getItem();
+                if (note != null && currentView == DashboardView.TRASH) {
+                    restoreNoteFromTrash(note);
+                }
+            });
+
+            ContextMenu contextMenu = new ContextMenu(toggleStarItem, restoreItem);
+            cell.emptyProperty().addListener((obs, wasEmpty, isEmpty) -> {
+                if (isEmpty) {
+                    cell.setContextMenu(null);
+                } else if (currentView == DashboardView.TRASH) {
+                    restoreItem.setVisible(true);
+                    toggleStarItem.setVisible(false);
+                    cell.setContextMenu(contextMenu);
+                } else {
+                    restoreItem.setVisible(false);
+                    toggleStarItem.setVisible(true);
+                    cell.setContextMenu(contextMenu);
+                }
+            });
+
+            return cell;
+        });
+    }
+
+    private void toggleStar(String noteName) {
+        if (starredNotes.contains(noteName)) {
+            starredNotes.remove(noteName);
+            showInfo("Removed from starred: " + noteName);
+        } else {
+            starredNotes.add(noteName);
+            showInfo("Added to starred: " + noteName);
+        }
+        SettingsManager.setStarredNotes(starredNotes);
+        if (currentView == DashboardView.STARRED) {
+            loadRecentProjects(DashboardView.STARRED);
+            updateStats();
+        }
+    }
+
+    private boolean moveNoteToTrash(String noteName) {
+        File source = resolveNoteFile(notesDir, noteName);
+        if (source == null || !source.exists()) {
+            return false;
+        }
+        File target = new File(trashDir, source.getName());
+        if (target.exists()) {
+            String timestampedName = noteName + "-" + System.currentTimeMillis() + ".txt";
+            target = new File(trashDir, timestampedName);
+        }
+        try {
+            Files.move(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private void restoreNoteFromTrash(String noteName) {
+        File source = resolveNoteFile(trashDir, noteName);
+        if (source == null || !source.exists()) {
+            showError("Note not found in trash");
+            return;
+        }
+        File target = new File(notesDir, source.getName());
+        if (target.exists()) {
+            target = new File(notesDir, noteName + "-restored-" + System.currentTimeMillis() + ".txt");
+        }
+        try {
+            Files.move(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            loadRecentProjects(DashboardView.TRASH);
+            updateStats();
+            showInfo("Restored: " + removeExtension(target.getName()));
+        } catch (IOException e) {
+            showError("Failed to restore note");
+        }
+    }
+
+    private File resolveNoteFile(File dir, String noteName) {
+        if (dir == null || !dir.exists()) {
+            return null;
+        }
+        File[] candidates = dir.listFiles((d, name) -> removeExtension(name).equals(noteName));
+        if (candidates != null && candidates.length > 0) {
+            return candidates[0];
+        }
+        return new File(dir, noteName + ".txt");
+    }
+
+    private String removeExtension(String filename) {
+        int lastDot = filename.lastIndexOf('.');
+        if (lastDot > 0) {
+            return filename.substring(0, lastDot);
+        }
+        return filename;
+    }
+
+    private void updateViewUI() {
+        if (deleteButton != null) {
+            if (currentView == DashboardView.TRASH) {
+                deleteButton.setText("🗑️ Delete Permanently");
+            } else {
+                deleteButton.setText("🗑️ Move to Trash");
+            }
         }
     }
 }

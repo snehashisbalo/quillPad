@@ -1,5 +1,8 @@
 #QuillPad Settings
-#Mon Feb 09 13:03:11 GMT+06:00 2026
+#Fri Feb 20 15:38:19 GMT+06:00 2026
 font.family=Times New Roman
 font.size=32
+network.api_key=
+network.base_url=http\://localhost\:8080
+network.enabled=false
 theme=CATPPUCCIN

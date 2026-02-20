@@ -131,6 +131,18 @@
     -fx-border-color: -fx-cat-surface0;
 }
 
+.catppuccin-theme .sidebar HBox.sidebar-btn-text:hover {
+    -fx-background-color: -fx-cat-surface0;
+}
+
+.catppuccin-theme .sidebar HBox.sidebar-btn-text .label {
+    -fx-text-fill: -fx-cat-text;
+}
+
+.catppuccin-theme .sidebar HBox.sidebar-btn-text:hover .label {
+    -fx-text-fill: -fx-cat-lavender;
+}
+
 .catppuccin-theme .sidebar-title {
     -fx-text-fill: -fx-cat-lavender;
 }
@@ -332,6 +344,22 @@
 .catppuccin-theme .input-field-container {
     -fx-background-color: -fx-cat-surface1;
     -fx-border-color: -fx-cat-surface2;
+}
+
+.catppuccin-theme .login-container .input-field-container {
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+}
+
+.catppuccin-theme .login-container .form-input,
+.catppuccin-theme .login-container .form-input:focused {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-insets: 0;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-effect: null;
 }
 
 .catppuccin-theme .form-input {
