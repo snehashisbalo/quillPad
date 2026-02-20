@@ -1,22 +1,23 @@
 #!/bin/bash
-# QuillPad IDE Launcher Script
+# QuillPad IDE Launcher Script for NixOS
 
-# Get the directory where this script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$SCRIPT_DIR"
 
-JAR_FILE="$SCRIPT_DIR/target/quillpad-1.0.0-SNAPSHOT.jar"
+MP=/home/scythe/.m2/repository/org/openjfx
+CACHE=/home/scythe/.openjfx/cache/21.0.2+5/amd64
 
-if [ ! -f "$JAR_FILE" ]; then
-    echo "Error: JAR file not found at $JAR_FILE"
-    echo "Please build the project first with: mvn package -DskipTests"
-    exit 1
-fi
+MODULE_PATH="$MP/javafx-controls/21.0.2/javafx-controls-21.0.2.jar"
+MODULE_PATH="$MODULE_PATH:$MP/javafx-controls/21.0.2/javafx-controls-21.0.2-linux.jar"
+MODULE_PATH="$MODULE_PATH:$MP/javafx-graphics/21.0.2/javafx-graphics-21.0.2.jar"
+MODULE_PATH="$MODULE_PATH:$MP/javafx-graphics/21.0.2/javafx-graphics-21.0.2-linux.jar"
+MODULE_PATH="$MODULE_PATH:$MP/javafx-base/21.0.2/javafx-base-21.0.2.jar"
+MODULE_PATH="$MODULE_PATH:$MP/javafx-base/21.0.2/javafx-base-21.0.2-linux.jar"
+MODULE_PATH="$MODULE_PATH:$MP/javafx-fxml/21.0.2/javafx-fxml-21.0.2.jar"
+MODULE_PATH="$MODULE_PATH:$MP/javafx-fxml/21.0.2/javafx-fxml-21.0.2-linux.jar"
 
-echo "Starting QuillPad IDE..."
-echo "JAR file: $JAR_FILE"
-
-# Run the application using Java modules
-exec java \
-    --module-path /usr/share/openjfx/lib \
-    --add-modules javafx.controls,javafx.fxml \
-    -jar "$JAR_FILE" "$@"
+exec java -Djava.library.path="$CACHE" \
+     --module-path "$MODULE_PATH" \
+     --add-modules javafx.controls,javafx.fxml \
+     -cp target/classes \
+     org.openjfx.QuillPad "$@"
