@@ -100,7 +100,7 @@ public class NoteSyncServer {
 
                 Path userDir = BASE_DIR.resolve(safeUser);
                 Files.createDirectories(userDir);
-                Path noteFile = userDir.resolve(safeNote + ".txt");
+                Path noteFile = userDir.resolve(safeNote);
                 Files.writeString(noteFile, content == null ? "" : content, StandardCharsets.UTF_8);
                 Path authorFile = userDir.resolve(safeNote + ".author");
                 String safeAuthor = isBlank(author) ? safeUser : sanitizeSegment(author);
@@ -155,7 +155,7 @@ public class NoteSyncServer {
                         return;
                     }
                     String safeNote = sanitizeSegment(noteName);
-                    Path noteFile = BASE_DIR.resolve(safeUser).resolve(safeNote + ".txt");
+                    Path noteFile = resolveNoteFile(BASE_DIR.resolve(safeUser), safeNote);
                     if (Files.exists(noteFile)) {
                         Files.delete(noteFile);
                     }
@@ -176,14 +176,13 @@ public class NoteSyncServer {
                     try (var stream = Files.list(userDir)) {
                         stream.filter(Files::isRegularFile)
                             .map(path -> path.getFileName().toString())
-                            .filter(name -> name.endsWith(".txt"))
-                            .map(name -> name.substring(0, name.length() - 4))
+                            .filter(name -> !name.endsWith(".author"))
                             .sorted()
-                            .forEach(name -> {
+                            .forEach(safeNote -> {
                                 if (!out.isEmpty()) {
                                     out.append('\n');
                                 }
-                                out.append(name).append('\t').append(resolveAuthor(userDir, name, safeUser));
+                                out.append(safeNote).append('\t').append(resolveAuthor(userDir, safeNote, safeUser));
                             });
                     }
                     sendText(exchange, 200, out.toString());
@@ -223,7 +222,7 @@ public class NoteSyncServer {
                 }
                 String safeUser = sanitizeSegment(username);
                 String safeNote = sanitizeSegment(noteName);
-                Path noteFile = BASE_DIR.resolve(safeUser).resolve(safeNote + ".txt");
+                Path noteFile = resolveNoteFile(BASE_DIR.resolve(safeUser), safeNote);
                 if (!Files.exists(noteFile)) {
                     sendJson(exchange, 404, "{\"error\":\"Note not found\"}");
                     return;
@@ -283,7 +282,7 @@ public class NoteSyncServer {
                         }
                         String fileName = authorFile.getFileName().toString();
                         String noteBase = fileName.substring(0, fileName.length() - ".author".length());
-                        Path noteFile = userDir.resolve(noteBase + ".txt");
+                        Path noteFile = resolveNoteFile(userDir, noteBase);
                         Files.deleteIfExists(noteFile);
                         Files.deleteIfExists(authorFile);
                         deleted++;
@@ -441,6 +440,18 @@ public class NoteSyncServer {
 
     private static String decodeQueryPart(String part) {
         return URLDecoder.decode(part, StandardCharsets.UTF_8);
+    }
+
+    private static Path resolveNoteFile(Path userDir, String safeNote) {
+        Path direct = userDir.resolve(safeNote);
+        if (Files.exists(direct)) {
+            return direct;
+        }
+        Path txt = userDir.resolve(safeNote + ".txt");
+        if (Files.exists(txt)) {
+            return txt;
+        }
+        return direct;
     }
 
     private static String sanitizeSegment(String raw) {

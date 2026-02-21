@@ -20,6 +20,7 @@
                             <SeparatorMenuItem/>
                             <MenuItem fx:id="saveMenuItem" text="Save"/>
                             <MenuItem fx:id="saveAsMenuItem" text="Save As..."/>
+                            <MenuItem fx:id="renameMenuItem" text="Rename..."/>
                             <SeparatorMenuItem/>
                             <MenuItem fx:id="closeMenuItem" text="Close"/>
                         </items>

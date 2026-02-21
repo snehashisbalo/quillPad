@@ -3,6 +3,7 @@ org/quillpad/collab/ClientHandler$1.class
 org/quillpad/collab/Document$StyleSegment.class
 org/openjfx/network/NetworkSyncService$SendResult.class
 org/quillpad/core/git/GitService$GitListener.class
+org/openjfx/component/RichTextEditor$Language.class
 org/openjfx/controller/DashboardController$DownloadSummary.class
 org/quillpad/core/git/GitService$GitCommit.class
 org/quillpad/core/application/StatusBar.class

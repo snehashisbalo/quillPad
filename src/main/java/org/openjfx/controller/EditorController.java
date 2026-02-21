@@ -28,6 +28,9 @@ import org.quillpad.collab.Message;
 
 import java.io.*;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.Timer;
 
@@ -46,6 +49,7 @@ public class EditorController implements Initializable {
     @FXML private MenuItem openMenuItem;
     @FXML private MenuItem saveMenuItem;
     @FXML private MenuItem saveAsMenuItem;
+    @FXML private MenuItem renameMenuItem;
     @FXML private MenuItem closeMenuItem;
     @FXML private MenuItem undoMenuItem;
     @FXML private MenuItem redoMenuItem;
@@ -187,6 +191,10 @@ public class EditorController implements Initializable {
             saveAsMenuItem.setAccelerator(new KeyCodeCombination(KeyCode.S, KeyCombination.SHORTCUT_DOWN, KeyCombination.SHIFT_DOWN));
             saveAsMenuItem.setOnAction(this::handleSaveAs);
         }
+        if (renameMenuItem != null) {
+            renameMenuItem.setAccelerator(new KeyCodeCombination(KeyCode.F2));
+            renameMenuItem.setOnAction(this::handleRenameFile);
+        }
         if (closeMenuItem != null) {
             closeMenuItem.setAccelerator(new KeyCodeCombination(KeyCode.W, KeyCombination.SHORTCUT_DOWN));
             closeMenuItem.setOnAction(this::handleCloseTab);
@@ -288,7 +296,7 @@ public class EditorController implements Initializable {
         if (title == null || title.isEmpty() || title.equals("Untitled")) {
             tabTitle = "Untitled-" + untitledCounter++;
         } else {
-            tabTitle = title;
+            tabTitle = formatTabTitleForFileName(title);
         }
 
         Tab tab = new Tab(tabTitle);
@@ -296,6 +304,7 @@ public class EditorController implements Initializable {
         editor.setDocumentName(tabTitle);
         editor.setWrapText(wordWrapMenuItem != null && wordWrapMenuItem.isSelected());
         editor.setFont(Font.font(SettingsManager.getFontFamily(), SettingsManager.getFontSize()));
+        editor.setLanguageFromFileName(tabTitle);
 
         tab.setContent(editor);
         tabEditorMap.put(tab, editor);
@@ -408,7 +417,14 @@ public class EditorController implements Initializable {
         File notesDir = new File(userNotesDir);
         File file = null;
 
-        if (notesDir.exists() && notesDir.isDirectory()) {
+        if (noteName != null && noteName.contains(".")) {
+            File direct = new File(userNotesDir, noteName);
+            if (direct.exists() && direct.isFile()) {
+                file = direct;
+            }
+        }
+
+        if (file == null && notesDir.exists() && notesDir.isDirectory()) {
             File[] matchingFiles = notesDir.listFiles((dir, name) -> {
                 int lastDot = name.lastIndexOf('.');
                 String nameWithoutExt = lastDot > 0 ? name.substring(0, lastDot) : name;
@@ -420,7 +436,7 @@ public class EditorController implements Initializable {
             }
         }
 
-        if (file == null) {
+        if (file == null && (noteName == null || !noteName.contains("."))) {
             file = new File(userNotesDir, noteName + ".txt");
         }
 
@@ -441,6 +457,7 @@ public class EditorController implements Initializable {
                 RichTextEditor editor = tabEditorMap.get(currentTab);
                 editor.setText(content.toString());
                 editor.setFont(Font.font(SettingsManager.getFontFamily(), SettingsManager.getFontSize()));
+                editor.setLanguageFromFileName(file.getName());
                 tabFilePathMap.put(currentTab, file.getAbsolutePath());
                 markTabModified(currentTab, false);
                 fileStatusLabel.setText("Loaded");
@@ -483,9 +500,10 @@ public class EditorController implements Initializable {
             if (baseName.isBlank()) {
                 baseName = "Untitled";
             }
-            File target = new File(notesDir, baseName + ".txt");
+            String fileName = baseName.matches(".*\\.[A-Za-z0-9]+$") ? baseName : baseName + ".txt";
+            File target = new File(notesDir, fileName);
             filePath = target.getAbsolutePath();
-            tab.setText(removeTxtExtension(target.getName()));
+            tab.setText(formatTabTitleForFileName(fileName));
             tabFilePathMap.put(tab, filePath);
         }
 
@@ -495,6 +513,7 @@ public class EditorController implements Initializable {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             writer.write(content);
             tabFilePathMap.put(tab, file.getAbsolutePath());
+            editor.setLanguageFromFileName(file.getName());
             markTabModified(tab, false);
             fileStatusLabel.setText("Saved: " + file.getName());
             return true;
@@ -554,6 +573,13 @@ public class EditorController implements Initializable {
         return filename;
     }
 
+    private String formatTabTitleForFileName(String fileName) {
+        if (fileName == null) {
+            return "";
+        }
+        return fileName.toLowerCase().endsWith(".txt") ? removeTxtExtension(fileName) : fileName;
+    }
+
     private void startAutoSave() {
         autoSaveTimer = new Timer(true);
         autoSaveTimer.scheduleAtFixedRate(new TimerTask() {
@@ -577,8 +603,10 @@ public class EditorController implements Initializable {
     @FXML private void handleOpen(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open File");
-        fileChooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("Text Files", "*.txt")
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("All Files", "*.*"),
+                new FileChooser.ExtensionFilter("Text Files", "*.txt", "*.md", "*.json", "*.xml", "*.yaml", "*.yml"),
+                new FileChooser.ExtensionFilter("Code Files", "*.java", "*.py", "*.js", "*.ts", "*.c", "*.cpp", "*.cs", "*.go", "*.rs", "*.php", "*.rb", "*.sql", "*.css", "*.html", "*.sh")
         );
         fileChooser.setInitialDirectory(new File("notes"));
 
@@ -591,11 +619,12 @@ public class EditorController implements Initializable {
                     content.append(line).append("\n");
                 }
 
-                String fileName = file.getName().replace(".txt", "");
+                String fileName = file.getName();
                 createNewTab(fileName);
                 Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
                 RichTextEditor editor = tabEditorMap.get(currentTab);
                 editor.setText(content.toString());
+                editor.setLanguageFromFileName(file.getName());
                 tabFilePathMap.put(currentTab, file.getAbsolutePath());
                 markTabModified(currentTab, false);
             } catch (IOException e) {
@@ -614,20 +643,157 @@ public class EditorController implements Initializable {
     @FXML private void handleSaveAs(ActionEvent event) {
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
         if (selectedTab != null) {
-            TextInputDialog dialog = new TextInputDialog(selectedTab.getText().replace("*", ""));
+            Dialog<ButtonType> dialog = new Dialog<>();
             dialog.setTitle("Save As");
-            dialog.setHeaderText("Enter new file name:");
-            dialog.setContentText("Name:");
+            dialog.setHeaderText("Choose file name and extension");
 
-            Optional<String> result = dialog.showAndWait();
-            result.ifPresent(name -> {
+            ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+            dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+
+            GridPane grid = new GridPane();
+            grid.setHgap(10);
+            grid.setVgap(10);
+            grid.setPadding(new Insets(20, 150, 10, 10));
+
+            String currentTitle = selectedTab.getText().replace("*", "");
+            String currentBaseName = currentTitle;
+            String currentExt = ".txt";
+            int dot = currentTitle.lastIndexOf('.');
+            if (dot > 0 && dot < currentTitle.length() - 1) {
+                currentBaseName = currentTitle.substring(0, dot);
+                currentExt = currentTitle.substring(dot);
+            }
+
+            TextField nameField = new TextField(currentBaseName);
+            ComboBox<String> extensionCombo = new ComboBox<>();
+            extensionCombo.setItems(FXCollections.observableArrayList(
+                    ".txt", ".c", ".cpp", ".java", ".py", ".html"
+            ));
+            extensionCombo.setEditable(true);
+            extensionCombo.setValue(currentExt);
+
+            grid.add(new Label("Name:"), 0, 0);
+            grid.add(nameField, 1, 0);
+            grid.add(new Label("Extension:"), 0, 1);
+            grid.add(extensionCombo, 1, 1);
+
+            dialog.getDialogPane().setContent(grid);
+            Platform.runLater(nameField::requestFocus);
+
+            Optional<ButtonType> result = dialog.showAndWait();
+            if (result.isPresent() && result.get() == saveButtonType) {
+                String name = nameField.getText() == null ? "" : nameField.getText().trim();
+                String ext = extensionCombo.getValue() == null ? ".txt" : extensionCombo.getValue().trim();
+
                 if (!name.isEmpty()) {
-                    selectedTab.setText(name);
+                    if (ext.isEmpty()) {
+                        ext = ".txt";
+                    } else if (!ext.startsWith(".")) {
+                        ext = "." + ext;
+                    }
+
+                    selectedTab.setText(formatTabTitleForFileName(name + ext));
                     tabFilePathMap.remove(selectedTab);
                     saveTab(selectedTab);
                 }
-            });
+            }
         }
+    }
+
+    @FXML private void handleRenameFile(ActionEvent event) {
+        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
+        if (selectedTab == null) {
+            return;
+        }
+
+        String currentTitle = selectedTab.getText().replace("*", "");
+        String currentPath = tabFilePathMap.get(selectedTab);
+        if (currentPath != null && currentPath.startsWith("collab:")) {
+            showInfo("Renaming collaborative documents is not supported here.");
+            return;
+        }
+
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Rename File");
+        dialog.setHeaderText("Choose new file name and extension");
+
+        ButtonType renameButtonType = new ButtonType("Rename", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(renameButtonType, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        String currentBaseName = currentTitle;
+        String currentExt = ".txt";
+        int dot = currentTitle.lastIndexOf('.');
+        if (dot > 0 && dot < currentTitle.length() - 1) {
+            currentBaseName = currentTitle.substring(0, dot);
+            currentExt = currentTitle.substring(dot);
+        }
+
+        TextField nameField = new TextField(currentBaseName);
+        ComboBox<String> extensionCombo = new ComboBox<>();
+        extensionCombo.setItems(FXCollections.observableArrayList(
+                ".txt", ".c", ".cpp", ".java", ".py", ".html"
+        ));
+        extensionCombo.setEditable(true);
+        extensionCombo.setValue(currentExt);
+
+        grid.add(new Label("Name:"), 0, 0);
+        grid.add(nameField, 1, 0);
+        grid.add(new Label("Extension:"), 0, 1);
+        grid.add(extensionCombo, 1, 1);
+
+        dialog.getDialogPane().setContent(grid);
+        Platform.runLater(nameField::requestFocus);
+
+        Optional<ButtonType> result = dialog.showAndWait();
+        if (result.isEmpty() || result.get() != renameButtonType) {
+            return;
+        }
+
+        String name = nameField.getText() == null ? "" : nameField.getText().trim();
+        String ext = extensionCombo.getValue() == null ? ".txt" : extensionCombo.getValue().trim();
+        if (name.isEmpty()) {
+            return;
+        }
+        if (ext.isEmpty()) {
+            ext = ".txt";
+        } else if (!ext.startsWith(".")) {
+            ext = "." + ext;
+        }
+
+        String newFileName = name + ext;
+        boolean isModified = isTabModified(selectedTab);
+
+        if (currentPath != null && !currentPath.isBlank()) {
+            try {
+                Path oldPath = Path.of(currentPath);
+                Path newPath = oldPath.resolveSibling(newFileName);
+                if (Files.exists(newPath) && !oldPath.equals(newPath)) {
+                    showError("A file with this name already exists.");
+                    return;
+                }
+                Files.createDirectories(newPath.getParent());
+                Files.move(oldPath, newPath, StandardCopyOption.REPLACE_EXISTING);
+                tabFilePathMap.put(selectedTab, newPath.toString());
+            } catch (IOException e) {
+                showError("Failed to rename file: " + e.getMessage());
+                return;
+            }
+        } else {
+            tabFilePathMap.remove(selectedTab);
+        }
+
+        selectedTab.setText(formatTabTitleForFileName(newFileName) + (isModified ? "*" : ""));
+        RichTextEditor editor = tabEditorMap.get(selectedTab);
+        if (editor != null) {
+            editor.setDocumentName(newFileName);
+            editor.setLanguageFromFileName(newFileName);
+        }
+        fileStatusLabel.setText("Renamed: " + newFileName);
     }
 
     @FXML private void handleCloseTab(ActionEvent event) {
@@ -1073,6 +1239,7 @@ public class EditorController implements Initializable {
                         isReceivingUpdate = true;
                         editor.fromDocument(doc);
                         isReceivingUpdate = false;
+                        editor.setLanguageFromFileName(docName);
                         
                         markTabModified(existingTab, false);
                         
@@ -1092,6 +1259,7 @@ public class EditorController implements Initializable {
                         editor.fromDocument(doc);
                         editor.setWrapText(wordWrapMenuItem != null && wordWrapMenuItem.isSelected());
                         editor.setFont(Font.font(SettingsManager.getFontFamily(), SettingsManager.getFontSize()));
+                        editor.setLanguageFromFileName(docName);
                         
                         newTab.setContent(editor);
                         tabEditorMap.put(newTab, editor);
@@ -1394,6 +1562,9 @@ public class EditorController implements Initializable {
 
     @FXML private void handleThemeToggle(ActionEvent event) {
         ThemeManager.toggleTheme();
+        for (RichTextEditor editor : tabEditorMap.values()) {
+            editor.updateTheme();
+        }
         refreshThemeToggleButton();
     }
 

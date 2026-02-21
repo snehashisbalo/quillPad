@@ -160,8 +160,10 @@ public class DashboardController implements Initializable {
             if (files != null) {
                 Arrays.sort(files, (f1, f2) -> Long.compare(f2.lastModified(), f1.lastModified()));
                 for (File file : files) {
-                    String noteName = removeExtension(file.getName());
-                    if (view == DashboardView.STARRED && !starredNotes.contains(noteName)) {
+                    String noteName = toDisplayNoteName(file.getName());
+                    if (view == DashboardView.STARRED
+                            && !starredNotes.contains(noteName)
+                            && !starredNotes.contains(removeExtension(file.getName()))) {
                         continue;
                     }
                     allNotes.add(noteName);
@@ -279,7 +281,7 @@ public class DashboardController implements Initializable {
             Optional<ButtonType> result = alert.showAndWait();
             if (result.isPresent() && result.get() == ButtonType.OK) {
                 if (currentView == DashboardView.TRASH) {
-                    File fileToDelete = new File(trashDir, selectedNote + ".txt");
+                    File fileToDelete = resolveNoteFile(trashDir, selectedNote);
                     if (fileToDelete.delete()) {
                         loadRecentProjects(DashboardView.TRASH);
                         updateStats();
@@ -571,11 +573,14 @@ public class DashboardController implements Initializable {
 
     private File resolveLocalTarget(String noteName) {
         String safeName = sanitizeName(noteName);
-        File target = new File(notesDir, safeName + ".txt");
+        String ext = extensionOf(safeName);
+        File target = new File(notesDir, ext.isEmpty() ? safeName + ".txt" : safeName);
         if (!target.exists()) {
             return target;
         }
-        return new File(notesDir, safeName + "-remote-" + System.currentTimeMillis() + ".txt");
+        String base = removeExtension(safeName);
+        String suffixExt = ext.isEmpty() ? ".txt" : ext;
+        return new File(notesDir, base + "-remote-" + System.currentTimeMillis() + suffixExt);
     }
 
     private List<String> listLocalNotesForUpload() {
@@ -586,7 +591,7 @@ public class DashboardController implements Initializable {
         }
         Arrays.sort(files, Comparator.comparing(File::getName));
         for (File file : files) {
-            notes.add(removeExtension(file.getName()));
+            notes.add(toDisplayNoteName(file.getName()));
         }
         return notes;
     }
@@ -618,7 +623,7 @@ public class DashboardController implements Initializable {
                     Files.writeString(target.toPath(), note.content());
                     success++;
                     if (savedFiles.size() < 5) {
-                        savedFiles.add(removeExtension(target.getName()));
+                        savedFiles.add(toDisplayNoteName(target.getName()));
                     }
                 } catch (Exception e) {
                     failed++;
@@ -870,6 +875,14 @@ public class DashboardController implements Initializable {
                 }
             });
 
+            MenuItem renameItem = new MenuItem("Rename...");
+            renameItem.setOnAction(e -> {
+                String note = cell.getItem();
+                if (note != null && currentView != DashboardView.TRASH) {
+                    renameNote(note);
+                }
+            });
+
             MenuItem restoreItem = new MenuItem("Restore from Trash");
             restoreItem.setOnAction(e -> {
                 String note = cell.getItem();
@@ -878,17 +891,19 @@ public class DashboardController implements Initializable {
                 }
             });
 
-            ContextMenu contextMenu = new ContextMenu(toggleStarItem, restoreItem);
+            ContextMenu contextMenu = new ContextMenu(toggleStarItem, renameItem, restoreItem);
             cell.emptyProperty().addListener((obs, wasEmpty, isEmpty) -> {
                 if (isEmpty) {
                     cell.setContextMenu(null);
                 } else if (currentView == DashboardView.TRASH) {
                     restoreItem.setVisible(true);
                     toggleStarItem.setVisible(false);
+                    renameItem.setVisible(false);
                     cell.setContextMenu(contextMenu);
                 } else {
                     restoreItem.setVisible(false);
                     toggleStarItem.setVisible(true);
+                    renameItem.setVisible(true);
                     cell.setContextMenu(contextMenu);
                 }
             });
@@ -912,6 +927,89 @@ public class DashboardController implements Initializable {
         }
     }
 
+    private void renameNote(String noteName) {
+        File source = resolveNoteFile(notesDir, noteName);
+        if (source == null || !source.exists()) {
+            showError("File not found");
+            return;
+        }
+
+        String sourceName = source.getName();
+        String currentBaseName = removeExtension(sourceName);
+        String currentExt = extensionOf(sourceName);
+        if (currentExt.isEmpty()) {
+            currentExt = ".txt";
+        }
+
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Rename File");
+        dialog.setHeaderText("Choose new file name and extension");
+
+        ButtonType renameButtonType = new ButtonType("Rename", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(renameButtonType, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        TextField nameField = new TextField(currentBaseName);
+        ComboBox<String> extensionCombo = new ComboBox<>();
+        extensionCombo.setItems(FXCollections.observableArrayList(
+                ".txt", ".c", ".cpp", ".java", ".py", ".html"
+        ));
+        extensionCombo.setEditable(true);
+        extensionCombo.setValue(currentExt);
+
+        grid.add(new Label("Name:"), 0, 0);
+        grid.add(nameField, 1, 0);
+        grid.add(new Label("Extension:"), 0, 1);
+        grid.add(extensionCombo, 1, 1);
+
+        dialog.getDialogPane().setContent(grid);
+        Platform.runLater(nameField::requestFocus);
+
+        Optional<ButtonType> result = dialog.showAndWait();
+        if (result.isEmpty() || result.get() != renameButtonType) {
+            return;
+        }
+
+        String name = nameField.getText() == null ? "" : nameField.getText().trim();
+        String ext = extensionCombo.getValue() == null ? ".txt" : extensionCombo.getValue().trim();
+        if (name.isEmpty()) {
+            return;
+        }
+        if (ext.isEmpty()) {
+            ext = ".txt";
+        } else if (!ext.startsWith(".")) {
+            ext = "." + ext;
+        }
+
+        String targetName = sanitizeName(name) + ext;
+        File target = new File(notesDir, targetName);
+        if (target.exists() && !target.equals(source)) {
+            showError("A file with this name already exists.");
+            return;
+        }
+
+        try {
+            Files.move(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+            String oldDisplay = toDisplayNoteName(source.getName());
+            String newDisplay = toDisplayNoteName(target.getName());
+            if (starredNotes.remove(oldDisplay)) {
+                starredNotes.add(newDisplay);
+                SettingsManager.setStarredNotes(starredNotes);
+            }
+
+            loadRecentProjects(currentView);
+            updateStats();
+            showInfo("Renamed: " + newDisplay);
+        } catch (IOException e) {
+            showError("Failed to rename file: " + e.getMessage());
+        }
+    }
+
     private boolean moveNoteToTrash(String noteName) {
         File source = resolveNoteFile(notesDir, noteName);
         if (source == null || !source.exists()) {
@@ -919,7 +1017,9 @@ public class DashboardController implements Initializable {
         }
         File target = new File(trashDir, source.getName());
         if (target.exists()) {
-            String timestampedName = noteName + "-" + System.currentTimeMillis() + ".txt";
+            String base = removeExtension(source.getName());
+            String ext = extensionOf(source.getName());
+            String timestampedName = base + "-" + System.currentTimeMillis() + ext;
             target = new File(trashDir, timestampedName);
         }
         try {
@@ -938,13 +1038,15 @@ public class DashboardController implements Initializable {
         }
         File target = new File(notesDir, source.getName());
         if (target.exists()) {
-            target = new File(notesDir, noteName + "-restored-" + System.currentTimeMillis() + ".txt");
+            String base = removeExtension(source.getName());
+            String ext = extensionOf(source.getName());
+            target = new File(notesDir, base + "-restored-" + System.currentTimeMillis() + ext);
         }
         try {
             Files.move(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
             loadRecentProjects(DashboardView.TRASH);
             updateStats();
-            showInfo("Restored: " + removeExtension(target.getName()));
+            showInfo("Restored: " + toDisplayNoteName(target.getName()));
         } catch (IOException e) {
             showError("Failed to restore note");
         }
@@ -954,11 +1056,25 @@ public class DashboardController implements Initializable {
         if (dir == null || !dir.exists()) {
             return null;
         }
-        File[] candidates = dir.listFiles((d, name) -> removeExtension(name).equals(noteName));
-        if (candidates != null && candidates.length > 0) {
+        File exact = new File(dir, noteName);
+        if (exact.isFile()) {
+            return exact;
+        }
+        File txt = new File(dir, noteName + ".txt");
+        if (txt.isFile()) {
+            return txt;
+        }
+        File[] candidates = dir.listFiles((d, name) -> toDisplayNoteName(name).equals(noteName));
+        if (candidates != null && candidates.length > 0 && candidates[0].isFile()) {
             return candidates[0];
         }
-        return new File(dir, noteName + ".txt");
+        return exact;
+    }
+
+    private String toDisplayNoteName(String fileName) {
+        return fileName != null && fileName.toLowerCase().endsWith(".txt")
+                ? removeExtension(fileName)
+                : fileName;
     }
 
     private String removeExtension(String filename) {
@@ -967,6 +1083,14 @@ public class DashboardController implements Initializable {
             return filename.substring(0, lastDot);
         }
         return filename;
+    }
+
+    private String extensionOf(String filename) {
+        int lastDot = filename.lastIndexOf('.');
+        if (lastDot > 0 && lastDot < filename.length() - 1) {
+            return filename.substring(lastDot);
+        }
+        return "";
     }
 
     private void updateViewUI() {

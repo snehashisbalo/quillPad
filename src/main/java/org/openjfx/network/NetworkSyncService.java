@@ -88,7 +88,7 @@ public final class NetworkSyncService {
             for (File file : files) {
                 attempted++;
                 try {
-                    String noteName = removeExtension(file.getName());
+                    String noteName = toRemoteNoteName(file.getName());
                     String content = Files.readString(file.toPath());
                     SendResult sendResult = sendNoteDetailed(username, username, noteName, content);
                     if (sendResult.success()) {
@@ -138,13 +138,14 @@ public final class NetworkSyncService {
                         continue;
                     }
                     String content = Files.readString(source.toPath());
-                    SendResult sendResult = sendNoteDetailed(username, author, noteName, content);
+                    String remoteName = toRemoteNoteName(source.getName());
+                    SendResult sendResult = sendNoteDetailed(username, author, remoteName, content);
                     if (sendResult.success()) {
                         success++;
                     } else {
                         failed++;
                         if (errorSamples.size() < 3) {
-                            errorSamples.add(noteName + ": " + sendResult.message());
+                            errorSamples.add(remoteName + ": " + sendResult.message());
                         }
                     }
                 } catch (IOException e) {
@@ -176,7 +177,7 @@ public final class NetworkSyncService {
             for (File file : files) {
                 attempted++;
                 try {
-                    String noteName = removeExtension(file.getName());
+                    String noteName = toRemoteNoteName(file.getName());
                     String content = Files.readString(file.toPath());
                     SendResult sendResult = sendNoteDetailed(username, author, noteName, content);
                     if (sendResult.success()) {
@@ -396,11 +397,22 @@ public final class NetworkSyncService {
         if (notesDir == null || noteName == null) {
             return null;
         }
+        File exact = new File(notesDir, noteName);
+        if (exact.exists() && exact.isFile()) {
+            return exact;
+        }
         File[] candidates = notesDir.listFiles((dir, name) -> removeExtension(name).equals(noteName));
         if (candidates != null && candidates.length > 0) {
             return candidates[0];
         }
         return new File(notesDir, noteName + ".txt");
+    }
+
+    private static String toRemoteNoteName(String fileName) {
+        if (fileName == null) {
+            return "";
+        }
+        return fileName.toLowerCase().endsWith(".txt") ? removeExtension(fileName) : fileName;
     }
 
     private static String escapeJson(String value) {
