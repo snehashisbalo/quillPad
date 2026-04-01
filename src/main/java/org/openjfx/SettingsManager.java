@@ -16,7 +16,7 @@ public class SettingsManager {
     // Default settings
     private static final String DEFAULT_FONT_FAMILY = "System";
     private static final String DEFAULT_FONT_SIZE = "14";
-    private static final String DEFAULT_THEME = "CATPPUCCIN";
+    private static final String DEFAULT_THEME = "DARK";
     private static final String DEFAULT_NETWORK_ENABLED = "false";
     private static final String DEFAULT_NETWORK_BASE_URL = "http://localhost:8080";
     private static final String DEFAULT_NETWORK_API_KEY = "";
@@ -93,7 +93,7 @@ public class SettingsManager {
         try {
             return ThemeManager.Theme.valueOf(themeName);
         } catch (IllegalArgumentException e) {
-            return ThemeManager.Theme.CATPPUCCIN;
+            return ThemeManager.Theme.DARK;
         }
     }
     

@@ -96,6 +96,8 @@ public class Document implements Serializable {
         private double fontSize;
         private String fontWeight;
         private String fontStyle;
+        private boolean underline;
+        private boolean strikethrough;
         private String textColor;
         private String backgroundColor;
         
@@ -118,6 +120,10 @@ public class Document implements Serializable {
         public void setFontWeight(String fontWeight) { this.fontWeight = fontWeight; }
         public String getFontStyle() { return fontStyle; }
         public void setFontStyle(String fontStyle) { this.fontStyle = fontStyle; }
+        public boolean isUnderline() { return underline; }
+        public void setUnderline(boolean underline) { this.underline = underline; }
+        public boolean isStrikethrough() { return strikethrough; }
+        public void setStrikethrough(boolean strikethrough) { this.strikethrough = strikethrough; }
         public String getTextColor() { return textColor; }
         public void setTextColor(String textColor) { this.textColor = textColor; }
         public String getBackgroundColor() { return backgroundColor; }
@@ -136,6 +142,12 @@ public class Document implements Serializable {
             }
             if ("italic".equals(fontStyle)) {
                 css.append("-fx-font-style: italic;");
+            }
+            if (underline) {
+                css.append("-fx-underline: true;");
+            }
+            if (strikethrough) {
+                css.append("-fx-strikethrough: true;");
             }
             if (textColor != null && !textColor.isEmpty()) {
                 css.append("-fx-fill: ").append(textColor).append(";");

@@ -27,7 +27,7 @@ A production-grade JavaFX IDE with comprehensive features for software developme
 - **Zoom Controls**: Zoom in/out with keyboard shortcuts
 - **Side Panel Toggle**: Show/hide the file explorer
 - **Terminal Panel**: Integrated terminal panel
-- **Dark Theme**: Professional dark color scheme
+- **Light and Dark Themes**: Switch between the two built-in modes
 
 ### Keyboard Shortcuts
 

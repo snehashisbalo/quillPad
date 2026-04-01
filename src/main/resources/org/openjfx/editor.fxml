@@ -102,35 +102,6 @@
                         <Tooltip text="Text Color"/>
                     </tooltip>
                 </ColorPicker>
-                
-                <Label text="Highlight:" styleClass="toolbar-label">
-                    <padding>
-                        <Insets left="10"/>
-                    </padding>
-                </Label>
-                <ColorPicker fx:id="highlightColorPicker" styleClass="highlight-color-picker">
-                    <tooltip>
-                        <Tooltip text="Highlight Color"/>
-                    </tooltip>
-                </ColorPicker>
-                
-                <Separator orientation="VERTICAL"/>
-                
-                <Button fx:id="alignLeftButton" text="L" styleClass="align-button">
-                    <tooltip>
-                        <Tooltip text="Align Left"/>
-                    </tooltip>
-                </Button>
-                <Button fx:id="alignCenterButton" text="C" styleClass="align-button">
-                    <tooltip>
-                        <Tooltip text="Align Center"/>
-                    </tooltip>
-                </Button>
-                <Button fx:id="alignRightButton" text="R" styleClass="align-button">
-                    <tooltip>
-                        <Tooltip text="Align Right"/>
-                    </tooltip>
-                </Button>
 
                 <Button fx:id="themeToggleButton" text="Theme" styleClass="theme-toggle-button editor-theme-toggle-button">
                     <tooltip>

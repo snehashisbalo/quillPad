@@ -6,6 +6,7 @@ org/quillpad/core/git/GitService$GitListener.class
 org/openjfx/component/RichTextEditor$Language.class
 org/openjfx/controller/DashboardController$DownloadSummary.class
 org/quillpad/core/git/GitService$GitCommit.class
+org/openjfx/controller/EditorController$4.class
 org/quillpad/core/application/StatusBar.class
 org/openjfx/controller/DashboardController.class
 org/openjfx/CacheManager.class
@@ -17,6 +18,7 @@ org/quillpad/core/git/GitService$GitEvent.class
 org/quillpad/collab/ClientHandler.class
 org/openjfx/network/NetworkSyncService$RemoteNoteRef.class
 org/openjfx/ThemeManager.class
+org/openjfx/controller/EditorController$3.class
 org/quillpad/core/application/TerminalPanel.class
 org/openjfx/network/NoteSyncServer$HealthHandler.class
 org/openjfx/network/NoteSyncServer$NoteContentHandler.class
@@ -27,6 +29,7 @@ org/openjfx/network/NetworkSyncService$SyncSummary.class
 org/openjfx/component/RichTextEditor$IndexRange.class
 org/openjfx/component/RichTextEditor.class
 org/openjfx/network/NetworkSyncService$RemoteNote.class
+org/openjfx/controller/EditorController$5.class
 org/quillpad/core/editor/SyntaxHighlighter$HighlightToken.class
 org/openjfx/SettingsManager.class
 org/quillpad/core/explorer/FileExplorer$FileExplorerListener.class
@@ -38,6 +41,7 @@ org/quillpad/core/application/QuillPadApplication.class
 org/openjfx/network/NoteSyncServer$SyncHandler.class
 org/quillpad/collab/Document.class
 org/openjfx/QuillPad.class
+org/openjfx/controller/EditorController$2.class
 org/quillpad/core/explorer/FileExplorer$1.class
 org/quillpad/core/editor/SyntaxHighlighter$Language.class
 org/openjfx/controller/EditorController$1.class

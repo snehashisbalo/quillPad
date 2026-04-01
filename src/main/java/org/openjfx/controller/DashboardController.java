@@ -81,9 +81,6 @@ public class DashboardController implements Initializable {
     private HBox homeNavItem;
 
     @FXML
-    private HBox myNotesNavItem;
-
-    @FXML
     private HBox starredNavItem;
 
     @FXML

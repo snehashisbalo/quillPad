@@ -50,20 +50,6 @@
                     </padding>
                 </HBox>
 
-                <HBox fx:id="myNotesNavItem" styleClass="sidebar-btn-text" onMouseClicked="#handleMyNotes">
-                    <children>
-                        <Label text="📝" style="-fx-font-size: 16px;"/>
-                        <Label text="My Notes" styleClass="sidebar-btn-text">
-                            <HBox.margin>
-                                <Insets left="10"/>
-                            </HBox.margin>
-                        </Label>
-                    </children>
-                    <padding>
-                        <Insets top="8" right="10" bottom="8" left="10"/>
-                    </padding>
-                </HBox>
-
                 <HBox fx:id="starredNavItem" styleClass="sidebar-btn-text" onMouseClicked="#handleStarred">
                     <children>
                         <Label text="⭐" style="-fx-font-size: 16px;"/>

@@ -155,6 +155,7 @@ public class RichTextEditor extends StackPane {
         getStyleClass().add("rich-text-editor");
         textArea.getStyleClass().add("rich-editor-area");
         textArea.setWrapText(true);
+        textArea.setUseInitialStyleForInsertion(false);
         sceneProperty().addListener((obs, oldScene, newScene) -> attachThemeListeners(newScene));
         applyEditorStyle();
         setupTypingAssists();
@@ -339,12 +340,52 @@ public class RichTextEditor extends StackPane {
     }
 
     public void setText(String text) {
-        textArea.clear();
-        textArea.appendText(text);
+        textArea.replaceText(text == null ? "" : text);
         modified = false;
         if (syntaxHighlightingEnabled) {
             applySyntaxHighlightingDelayed();
         }
+    }
+
+    public int replaceAll(String findText, String replaceText) {
+        if (findText == null || findText.isEmpty()) {
+            return 0;
+        }
+
+        String content = getText();
+        if (content == null || content.isEmpty()) {
+            return 0;
+        }
+
+        java.util.List<Integer> matches = new java.util.ArrayList<>();
+        int index = 0;
+        while ((index = content.indexOf(findText, index)) >= 0) {
+            matches.add(index);
+            index += findText.length();
+        }
+
+        if (matches.isEmpty()) {
+            return 0;
+        }
+
+        int caretPosition = Math.min(textArea.getCaretPosition(), content.length());
+        String replacement = replaceText == null ? "" : replaceText;
+
+        for (int i = matches.size() - 1; i >= 0; i--) {
+            int start = matches.get(i);
+            int end = start + findText.length();
+            String style = textArea.getStyleAtPosition(Math.min(start, Math.max(0, textArea.getLength() - 1)));
+            textArea.replace(start, end, replacement, style == null ? "" : style);
+        }
+
+        textArea.moveTo(Math.min(caretPosition, textArea.getLength()));
+        modified = true;
+
+        if (syntaxHighlightingEnabled) {
+            applySyntaxHighlightingDelayed();
+        }
+
+        return matches.size();
     }
 
     public void setFont(Font font) {
@@ -391,14 +432,6 @@ public class RichTextEditor extends StackPane {
             editorBg = "#1e1e1e";
             editorFg = "#d4d4d4";
             selectionBg = "#264f78";
-        } else if (styles.contains("catppuccin-theme")) {
-            editorBg = "#1e1e2e";
-            editorFg = "#cdd6f4";
-            selectionBg = "#585b70";
-        } else if (styles.contains("tokyo-night-theme")) {
-            editorBg = "#1a1b26";
-            editorFg = "#a9b1d6";
-            selectionBg = "#3b4261";
         } else {
             editorBg = "#ffffff";
             editorFg = "#2c3e50";
@@ -490,84 +523,43 @@ public class RichTextEditor extends StackPane {
         this.filePath = filePath;
     }
 
-    public void applyBoldToSelection() {
+    public void applyBoldToSelection(boolean enabled) {
+        applyBooleanStyle("-fx-font-weight: bold;", enabled);
+    }
+
+    public void applyItalicToSelection(boolean enabled) {
+        applyBooleanStyle("-fx-font-style: italic;", enabled);
+    }
+
+    public void applyUnderlineToSelection(boolean enabled) {
+        applyBooleanStyle("-fx-underline: true;", enabled);
+    }
+
+    public void applyStrikethroughToSelection(boolean enabled) {
+        applyBooleanStyle("-fx-strikethrough: true;", enabled);
+    }
+
+    private void applyBooleanStyle(String styleToken, boolean enabled) {
         IndexRange selection = getSelection();
         int start = selection.getStart();
         int end = selection.getEnd();
 
+        String insertionStyle = textArea.getTextStyleForInsertionAt(textArea.getCaretPosition());
+        textArea.setTextInsertionStyle(updateStyleToken(insertionStyle, styleToken, enabled));
+
         if (selection.getLength() == 0) {
-            start = textArea.getCaretPosition();
-            end = start + 1;
+            return;
         }
 
         if (end > start) {
             String currentStyle = getStyleAtPosition(start);
-            boolean isBold = currentStyle.contains("-fx-font-weight: bold");
-            String newStyle = isBold ?
-                    currentStyle.replace("-fx-font-weight: bold;", "") :
-                    currentStyle + "-fx-font-weight: bold;";
-            setStyle(start, end, newStyle);
+            setStyle(start, end, updateStyleToken(currentStyle, styleToken, enabled));
         }
     }
 
-    public void applyItalicToSelection() {
-        IndexRange selection = getSelection();
-        int start = selection.getStart();
-        int end = selection.getEnd();
-
-        if (selection.getLength() == 0) {
-            start = textArea.getCaretPosition();
-            end = start + 1;
-        }
-
-        if (end > start) {
-            String currentStyle = getStyleAtPosition(start);
-            boolean isItalic = currentStyle.contains("-fx-font-style: italic;");
-            String newStyle = isItalic ?
-                    currentStyle.replace("-fx-font-style: italic;", "") :
-                    currentStyle + "-fx-font-style: italic;";
-            setStyle(start, end, newStyle);
-        }
-    }
-
-    public void applyUnderlineToSelection() {
-        IndexRange selection = getSelection();
-        int start = selection.getStart();
-        int end = selection.getEnd();
-
-        if (selection.getLength() == 0) {
-            start = textArea.getCaretPosition();
-            end = start + 1;
-        }
-
-        if (end > start) {
-            String currentStyle = getStyleAtPosition(start);
-            boolean isUnderline = currentStyle.contains("-fx-underline: true;");
-            String newStyle = isUnderline ?
-                    currentStyle.replace("-fx-underline: true;", "") :
-                    currentStyle + "-fx-underline: true;";
-            setStyle(start, end, newStyle);
-        }
-    }
-
-    public void applyStrikethroughToSelection() {
-        IndexRange selection = getSelection();
-        int start = selection.getStart();
-        int end = selection.getEnd();
-
-        if (selection.getLength() == 0) {
-            start = textArea.getCaretPosition();
-            end = start + 1;
-        }
-
-        if (end > start) {
-            String currentStyle = getStyleAtPosition(start);
-            boolean isStrikethrough = currentStyle.contains("-fx-strikethrough: true;");
-            String newStyle = isStrikethrough ?
-                    currentStyle.replace("-fx-strikethrough: true;", "") :
-                    currentStyle + "-fx-strikethrough: true;";
-            setStyle(start, end, newStyle);
-        }
+    private String updateStyleToken(String currentStyle, String styleToken, boolean enabled) {
+        String normalized = currentStyle == null ? "" : currentStyle.replace(styleToken, "");
+        return enabled ? normalized + styleToken : normalized;
     }
 
     public void applyFontFamilyToSelection(String fontFamily) {
@@ -575,9 +567,12 @@ public class RichTextEditor extends StackPane {
         int start = selection.getStart();
         int end = selection.getEnd();
 
+        String insertionStyle = textArea.getTextStyleForInsertionAt(textArea.getCaretPosition());
+        insertionStyle = insertionStyle == null ? "" : insertionStyle.replaceAll("-fx-font-family: \"[^\"]+\";", "");
+        textArea.setTextInsertionStyle(insertionStyle + String.format("-fx-font-family: \"%s\";", fontFamily));
+
         if (selection.getLength() == 0) {
-            start = textArea.getCaretPosition();
-            end = start + 1;
+            return;
         }
 
         if (end > start) {
@@ -593,9 +588,12 @@ public class RichTextEditor extends StackPane {
         int start = selection.getStart();
         int end = selection.getEnd();
 
+        String insertionStyle = textArea.getTextStyleForInsertionAt(textArea.getCaretPosition());
+        insertionStyle = insertionStyle == null ? "" : insertionStyle.replaceAll("-fx-font-size: [0-9.]+px;", "");
+        textArea.setTextInsertionStyle(insertionStyle + String.format("-fx-font-size: %.0fpx;", fontSize));
+
         if (selection.getLength() == 0) {
-            start = textArea.getCaretPosition();
-            end = start + 1;
+            return;
         }
 
         if (end > start) {
@@ -658,6 +656,36 @@ public class RichTextEditor extends StackPane {
         return textArea.getStyleAtPosition(position);
     }
 
+    public boolean isBoldActive() {
+        return getStyleAtCaretOrSelection().contains("-fx-font-weight: bold;");
+    }
+
+    public boolean isItalicActive() {
+        return getStyleAtCaretOrSelection().contains("-fx-font-style: italic;");
+    }
+
+    public boolean isUnderlineActive() {
+        return getStyleAtCaretOrSelection().contains("-fx-underline: true;");
+    }
+
+    public boolean isStrikethroughActive() {
+        return getStyleAtCaretOrSelection().contains("-fx-strikethrough: true;");
+    }
+
+    private String getStyleAtCaretOrSelection() {
+        javafx.scene.control.IndexRange selection = textArea.getSelection();
+        if (selection.getLength() > 0 && textArea.getLength() > 0) {
+            int position = Math.min(selection.getStart(), textArea.getLength() - 1);
+            return getStyleAtPosition(position);
+        }
+
+        int caret = textArea.getCaretPosition();
+        if (caret < 0) {
+            return textArea.getTextInsertionStyle();
+        }
+        return textArea.getTextStyleForInsertionAt(caret);
+    }
+
     private void setStyle(int from, int to, String style) {
         textArea.setStyle(from, to, style);
     }
@@ -697,8 +725,7 @@ public class RichTextEditor extends StackPane {
     }
 
     public void fromDocument(Document doc) {
-        textArea.clear();
-        textArea.appendText(doc.getPlainText());
+        textArea.replaceText(doc.getPlainText() == null ? "" : doc.getPlainText());
 
         this.documentId = doc.getDocumentId();
         this.documentName = doc.getDocumentName();
@@ -732,6 +759,12 @@ public class RichTextEditor extends StackPane {
         }
         if (style.contains("-fx-font-style: italic")) {
             segment.setFontStyle("italic");
+        }
+        if (style.contains("-fx-underline: true")) {
+            segment.setUnderline(true);
+        }
+        if (style.contains("-fx-strikethrough: true")) {
+            segment.setStrikethrough(true);
         }
         if (style.contains("-fx-fill:")) {
             java.util.regex.Matcher m = java.util.regex.Pattern.compile("-fx-fill: ([^;]+);").matcher(style);
@@ -938,53 +971,40 @@ public class RichTextEditor extends StackPane {
 
     private String getStyleForMatch(Matcher matcher) {
         ThemeManager.Theme theme = ThemeManager.getCurrentTheme();
+        boolean dark = theme == ThemeManager.Theme.DARK;
 
         if (matcher.group("KEYWORD") != null) {
-            if (theme == ThemeManager.Theme.TOKYO_NIGHT) return "-fx-fill: #f7768e;";
-            if (theme == ThemeManager.Theme.CATPPUCCIN) return "-fx-fill: #cba6f7;";
-            if (theme == ThemeManager.Theme.DARK) return "-fx-fill: #569cd6;";
+            if (dark) return "-fx-fill: #569cd6;";
             return "-fx-fill: #0000ff; -fx-font-weight: bold;";
         }
 
         if (matcher.group("TYPE") != null) {
-            if (theme == ThemeManager.Theme.TOKYO_NIGHT) return "-fx-fill: #73daca;";
-            if (theme == ThemeManager.Theme.CATPPUCCIN) return "-fx-fill: #f9e2af;";
-            if (theme == ThemeManager.Theme.DARK) return "-fx-fill: #4ec9b0;";
+            if (dark) return "-fx-fill: #4ec9b0;";
             return "-fx-fill: #267f99;";
         }
 
         if (matcher.group("COMMENT") != null) {
-            if (theme == ThemeManager.Theme.TOKYO_NIGHT) return "-fx-fill: #565f89; -fx-font-style: italic;";
-            if (theme == ThemeManager.Theme.CATPPUCCIN) return "-fx-fill: #6c7086; -fx-font-style: italic;";
-            if (theme == ThemeManager.Theme.DARK) return "-fx-fill: #6a9955; -fx-font-style: italic;";
+            if (dark) return "-fx-fill: #6a9955; -fx-font-style: italic;";
             return "-fx-fill: #008000; -fx-font-style: italic;";
         }
 
         if (matcher.group("STRING") != null) {
-            if (theme == ThemeManager.Theme.TOKYO_NIGHT) return "-fx-fill: #9ece6a;";
-            if (theme == ThemeManager.Theme.CATPPUCCIN) return "-fx-fill: #a6e3a1;";
-            if (theme == ThemeManager.Theme.DARK) return "-fx-fill: #ce9178;";
+            if (dark) return "-fx-fill: #ce9178;";
             return "-fx-fill: #a31515;";
         }
 
         if (matcher.group("NUMBER") != null) {
-            if (theme == ThemeManager.Theme.TOKYO_NIGHT) return "-fx-fill: #ff9e64;";
-            if (theme == ThemeManager.Theme.CATPPUCCIN) return "-fx-fill: #fab387;";
-            if (theme == ThemeManager.Theme.DARK) return "-fx-fill: #b5cea8;";
+            if (dark) return "-fx-fill: #b5cea8;";
             return "-fx-fill: #098658;";
         }
 
         if (matcher.group("TAG") != null) {
-            if (theme == ThemeManager.Theme.TOKYO_NIGHT) return "-fx-fill: #7aa2f7;";
-            if (theme == ThemeManager.Theme.CATPPUCCIN) return "-fx-fill: #89b4fa;";
-            if (theme == ThemeManager.Theme.DARK) return "-fx-fill: #4ec9b0;";
+            if (dark) return "-fx-fill: #4ec9b0;";
             return "-fx-fill: #800000;";
         }
 
         if (matcher.group("PREPROC") != null) {
-            if (theme == ThemeManager.Theme.TOKYO_NIGHT) return "-fx-fill: #bb9af7; -fx-font-weight: bold;";
-            if (theme == ThemeManager.Theme.CATPPUCCIN) return "-fx-fill: #cba6f7; -fx-font-weight: bold;";
-            if (theme == ThemeManager.Theme.DARK) return "-fx-fill: #c586c0; -fx-font-weight: bold;";
+            if (dark) return "-fx-fill: #c586c0; -fx-font-weight: bold;";
             return "-fx-fill: #7c3aed; -fx-font-weight: bold;";
         }
 

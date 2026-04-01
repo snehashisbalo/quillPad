@@ -13,6 +13,8 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
@@ -28,8 +30,10 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.Timer;
+import java.util.Base64;
 
 public class EditorController implements Initializable {
+    private static final String STYLED_DOC_HEADER = "QPAD-DOC-1";
 
     @FXML private TabPane tabPane;
     @FXML private Label lineLabel;
@@ -65,7 +69,6 @@ public class EditorController implements Initializable {
     @FXML private ToggleButton underlineButton;
     @FXML private ToggleButton strikethroughButton;
     @FXML private ColorPicker textColorPicker;
-    @FXML private ColorPicker highlightColorPicker;
     @FXML private Button themeToggleButton;
 
     private QuillPad mainApp;
@@ -118,6 +121,7 @@ public class EditorController implements Initializable {
                 RichTextEditor editor = tabEditorMap.get(newTab);
                 if (editor != null) {
                     updateStatus(editor, editor.getCaretPosition());
+                    refreshFormatToggleButtons(editor);
                 }
             }
         });
@@ -144,10 +148,38 @@ public class EditorController implements Initializable {
         ObservableList<String> families = FXCollections.observableArrayList(FONT_FAMILIES);
         fontFamilyCombo.setItems(families);
         fontFamilyCombo.setValue(SettingsManager.getFontFamily());
+        fontFamilyCombo.setCellFactory(listView -> new ListCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item);
+            }
+        });
+        fontFamilyCombo.setButtonCell(new ListCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item);
+            }
+        });
 
         ObservableList<Integer> sizes = FXCollections.observableArrayList(FONT_SIZES);
         fontSizeCombo.setItems(sizes);
         fontSizeCombo.setValue(SettingsManager.getFontSize());
+        fontSizeCombo.setCellFactory(listView -> new ListCell<>() {
+            @Override
+            protected void updateItem(Integer item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : String.valueOf(item));
+            }
+        });
+        fontSizeCombo.setButtonCell(new ListCell<>() {
+            @Override
+            protected void updateItem(Integer item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : String.valueOf(item));
+            }
+        });
     }
 
     private void setupKeyboardShortcuts() {
@@ -235,14 +267,13 @@ public class EditorController implements Initializable {
     private void setupToolbarListeners() {
         fontFamilyCombo.setOnAction(e -> applyFontFamily());
         fontSizeCombo.setOnAction(e -> applyFontSize());
-        
+
         boldButton.setOnAction(e -> applyBold());
         italicButton.setOnAction(e -> applyItalic());
         underlineButton.setOnAction(e -> applyUnderline());
         strikethroughButton.setOnAction(e -> applyStrikethrough());
         
         textColorPicker.setOnAction(e -> applyTextColor());
-        highlightColorPicker.setOnAction(e -> applyHighlight());
     }
 
     private void createNewTab(String title) {
@@ -273,7 +304,11 @@ public class EditorController implements Initializable {
     private void setupTabListeners(Tab tab, RichTextEditor editor) {
         editor.getTextArea().caretPositionProperty().addListener((caretObs, oldPos, newPos) -> {
             updateStatus(editor, newPos.intValue());
+            refreshFormatToggleButtons(editor);
         });
+
+        editor.getTextArea().selectionProperty().addListener((obs, oldSelection, newSelection) ->
+                refreshFormatToggleButtons(editor));
 
         editor.getTextArea().textProperty().addListener((obs, oldText, newText) -> {
             markTabModified(tab, true);
@@ -290,6 +325,7 @@ public class EditorController implements Initializable {
         });
 
         updateStatus(editor, 0);
+        refreshFormatToggleButtons(editor);
     }
 
     private void updateStatus(RichTextEditor editor, int caretPosition) {
@@ -385,27 +421,17 @@ public class EditorController implements Initializable {
         }
 
         if (file.exists()) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                StringBuilder content = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    content.append(line).append("\n");
-                }
-
-                if (content.length() > 0 && content.charAt(content.length() - 1) == '\n') {
-                    content.setLength(content.length() - 1);
-                }
-
+            try {
                 createNewTab(noteName);
                 Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
                 RichTextEditor editor = tabEditorMap.get(currentTab);
-                editor.setText(content.toString());
+                loadEditorFromFile(editor, file);
                 editor.setFont(Font.font(SettingsManager.getFontFamily(), SettingsManager.getFontSize()));
                 editor.setLanguageFromFileName(file.getName());
                 tabFilePathMap.put(currentTab, file.getAbsolutePath());
                 markTabModified(currentTab, false);
                 fileStatusLabel.setText("Loaded");
-            } catch (IOException e) {
+            } catch (IOException | ClassNotFoundException e) {
                 fileStatusLabel.setText("Error loading file");
                 showError("Failed to load file: " + e.getMessage());
             }
@@ -416,7 +442,6 @@ public class EditorController implements Initializable {
 
     private boolean saveTab(Tab tab) {
         RichTextEditor editor = tabEditorMap.get(tab);
-        String content = editor.getText();
         String tabTitle = tab.getText().replace("*", "");
 
         String filePath = tabFilePathMap.get(tab);
@@ -442,8 +467,8 @@ public class EditorController implements Initializable {
         File file = new File(filePath);
         file.getParentFile().mkdirs();
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-            writer.write(content);
+        try {
+            writeEditorToFile(editor, file);
             tabFilePathMap.put(tab, file.getAbsolutePath());
             editor.setLanguageFromFileName(file.getName());
             markTabModified(tab, false);
@@ -544,24 +569,54 @@ public class EditorController implements Initializable {
 
         File file = fileChooser.showOpenDialog(tabPane.getScene().getWindow());
         if (file != null) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-                StringBuilder content = new StringBuilder();
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    content.append(line).append("\n");
-                }
-
+            try {
                 String fileName = file.getName();
                 createNewTab(fileName);
                 Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
                 RichTextEditor editor = tabEditorMap.get(currentTab);
-                editor.setText(content.toString());
+                loadEditorFromFile(editor, file);
                 editor.setLanguageFromFileName(file.getName());
                 tabFilePathMap.put(currentTab, file.getAbsolutePath());
                 markTabModified(currentTab, false);
-            } catch (IOException e) {
+            } catch (IOException | ClassNotFoundException e) {
                 showError("Failed to open file: " + e.getMessage());
             }
+        }
+    }
+
+    private void writeEditorToFile(RichTextEditor editor, File file) throws IOException {
+        file.getParentFile().mkdirs();
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+            writer.write(STYLED_DOC_HEADER);
+            writer.newLine();
+            writer.write(encodeDocument(editor.toDocument()));
+        }
+    }
+
+    private void loadEditorFromFile(RichTextEditor editor, File file) throws IOException, ClassNotFoundException {
+        String content = Files.readString(file.toPath());
+        if (content.startsWith(STYLED_DOC_HEADER + System.lineSeparator())
+                || content.startsWith(STYLED_DOC_HEADER + "\n")
+                || content.equals(STYLED_DOC_HEADER)) {
+            String encoded = content.substring(STYLED_DOC_HEADER.length()).stripLeading();
+            editor.fromDocument(decodeDocument(encoded));
+            return;
+        }
+        editor.setText(content);
+    }
+
+    private String encodeDocument(org.quillpad.collab.Document document) throws IOException {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (ObjectOutputStream out = new ObjectOutputStream(bytes)) {
+            out.writeObject(document);
+        }
+        return Base64.getEncoder().encodeToString(bytes.toByteArray());
+    }
+
+    private org.quillpad.collab.Document decodeDocument(String encoded) throws IOException, ClassNotFoundException {
+        byte[] bytes = Base64.getDecoder().decode(encoded);
+        try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes))) {
+            return (org.quillpad.collab.Document) in.readObject();
         }
     }
 
@@ -838,23 +893,7 @@ public class EditorController implements Initializable {
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
         if (selectedTab != null) {
             RichTextEditor editor = tabEditorMap.get(selectedTab);
-
-            TextInputDialog dialog = new TextInputDialog();
-            dialog.setTitle("Find");
-            dialog.setHeaderText("Find text:");
-            dialog.setContentText("Search for:");
-
-            Optional<String> result = dialog.showAndWait();
-            result.ifPresent(searchText -> {
-                String content = editor.getText();
-                int index = content.indexOf(searchText);
-                if (index >= 0) {
-                    editor.selectRange(index, index + searchText.length());
-                    editor.getTextArea().requestFocus();
-                } else {
-                    showInfo("Text not found: " + searchText);
-                }
-            });
+            showFindDialog(editor);
         }
     }
 
@@ -894,10 +933,17 @@ public class EditorController implements Initializable {
                 String findText = findField.getText();
                 String replaceText = replaceField.getText();
                 if (!findText.isEmpty()) {
-                    String content = editor.getText();
-                    String newContent = content.replace(findText, replaceText);
-                    editor.setText(newContent);
-                    showInfo("Replaced all occurrences");
+                    try {
+                        int replacements = editor.replaceAll(findText, replaceText);
+                        if (replacements > 0) {
+                            fileStatusLabel.setText("Replaced " + replacements + " occurrence" + (replacements == 1 ? "" : "s"));
+                            showInfo("Replaced " + replacements + " occurrence" + (replacements == 1 ? "" : "s") + ".");
+                        } else {
+                            showInfo("Text not found: " + findText);
+                        }
+                    } catch (Exception e) {
+                        showError("Replace failed: " + e.getMessage());
+                    }
                 }
             }
         }
@@ -1006,7 +1052,8 @@ public class EditorController implements Initializable {
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
         if (selectedTab != null) {
             RichTextEditor editor = tabEditorMap.get(selectedTab);
-            editor.applyBoldToSelection();
+            editor.applyBoldToSelection(boldButton.isSelected());
+            refreshFormatToggleButtons(editor);
         }
     }
 
@@ -1014,7 +1061,8 @@ public class EditorController implements Initializable {
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
         if (selectedTab != null) {
             RichTextEditor editor = tabEditorMap.get(selectedTab);
-            editor.applyItalicToSelection();
+            editor.applyItalicToSelection(italicButton.isSelected());
+            refreshFormatToggleButtons(editor);
         }
     }
 
@@ -1022,7 +1070,8 @@ public class EditorController implements Initializable {
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
         if (selectedTab != null) {
             RichTextEditor editor = tabEditorMap.get(selectedTab);
-            editor.applyUnderlineToSelection();
+            editor.applyUnderlineToSelection(underlineButton.isSelected());
+            refreshFormatToggleButtons(editor);
         }
     }
 
@@ -1030,8 +1079,19 @@ public class EditorController implements Initializable {
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
         if (selectedTab != null) {
             RichTextEditor editor = tabEditorMap.get(selectedTab);
-            editor.applyStrikethroughToSelection();
+            editor.applyStrikethroughToSelection(strikethroughButton.isSelected());
+            refreshFormatToggleButtons(editor);
         }
+    }
+
+    private void refreshFormatToggleButtons(RichTextEditor editor) {
+        if (editor == null) {
+            return;
+        }
+        boldButton.setSelected(editor.isBoldActive());
+        italicButton.setSelected(editor.isItalicActive());
+        underlineButton.setSelected(editor.isUnderlineActive());
+        strikethroughButton.setSelected(editor.isStrikethroughActive());
     }
 
     private void applyTextColor() {
@@ -1045,21 +1105,6 @@ public class EditorController implements Initializable {
                     (int)(color.getGreen() * 255),
                     (int)(color.getBlue() * 255));
                 editor.applyTextColorToSelection(colorHex);
-            }
-        }
-    }
-
-    private void applyHighlight() {
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            RichTextEditor editor = tabEditorMap.get(selectedTab);
-            Color color = highlightColorPicker.getValue();
-            if (color != null) {
-                String colorHex = String.format("#%02X%02X%02X", 
-                    (int)(color.getRed() * 255),
-                    (int)(color.getGreen() * 255),
-                    (int)(color.getBlue() * 255));
-                editor.applyHighlightToSelection(colorHex);
             }
         }
     }
@@ -1087,6 +1132,118 @@ public class EditorController implements Initializable {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    private void showFindDialog(RichTextEditor editor) {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Find");
+        dialog.setHeaderText("Find in current document");
+
+        ButtonType previousButtonType = new ButtonType("Previous", ButtonBar.ButtonData.LEFT);
+        ButtonType nextButtonType = new ButtonType("Next", ButtonBar.ButtonData.OK_DONE);
+        ButtonType closeButtonType = new ButtonType("Close", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(previousButtonType, nextButtonType, closeButtonType);
+
+        TextField findField = new TextField();
+        findField.setPromptText("Search for");
+        Label countLabel = new Label("0 matches");
+
+        VBox content = new VBox(10);
+        content.getChildren().addAll(new Label("Find:"), findField, countLabel);
+        dialog.getDialogPane().setContent(content);
+
+        java.util.List<Integer> matches = new ArrayList<>();
+        int[] currentMatchIndex = { -1 };
+
+        Runnable refreshMatches = () -> {
+            matches.clear();
+            currentMatchIndex[0] = -1;
+
+            String query = findField.getText();
+            if (query == null || query.isEmpty()) {
+                countLabel.setText("0 matches");
+                editor.clearSelection();
+                return;
+            }
+
+            matches.addAll(findAllMatches(editor.getText(), query));
+            if (matches.isEmpty()) {
+                countLabel.setText("0 matches");
+                editor.clearSelection();
+                return;
+            }
+
+            int selectionStart = editor.getSelection().getStart();
+            for (int i = 0; i < matches.size(); i++) {
+                if (matches.get(i) >= selectionStart) {
+                    currentMatchIndex[0] = i;
+                    break;
+                }
+            }
+            if (currentMatchIndex[0] < 0) {
+                currentMatchIndex[0] = 0;
+            }
+            selectSearchMatch(editor, findField.getText(), matches, currentMatchIndex[0], countLabel);
+        };
+
+        Runnable goNext = () -> {
+            if (matches.isEmpty()) {
+                return;
+            }
+            currentMatchIndex[0] = currentMatchIndex[0] < 0 ? 0 : (currentMatchIndex[0] + 1) % matches.size();
+            selectSearchMatch(editor, findField.getText(), matches, currentMatchIndex[0], countLabel);
+        };
+
+        Runnable goPrevious = () -> {
+            if (matches.isEmpty()) {
+                return;
+            }
+            currentMatchIndex[0] = currentMatchIndex[0] < 0
+                    ? matches.size() - 1
+                    : (currentMatchIndex[0] - 1 + matches.size()) % matches.size();
+            selectSearchMatch(editor, findField.getText(), matches, currentMatchIndex[0], countLabel);
+        };
+
+        findField.textProperty().addListener((obs, oldValue, newValue) -> refreshMatches.run());
+        findField.setOnAction(e -> goNext.run());
+
+        Button previousButton = (Button) dialog.getDialogPane().lookupButton(previousButtonType);
+        Button nextButton = (Button) dialog.getDialogPane().lookupButton(nextButtonType);
+        previousButton.addEventFilter(ActionEvent.ACTION, e -> {
+            e.consume();
+            goPrevious.run();
+        });
+        nextButton.addEventFilter(ActionEvent.ACTION, e -> {
+            e.consume();
+            goNext.run();
+        });
+
+        Platform.runLater(findField::requestFocus);
+        dialog.showAndWait();
+    }
+
+    private java.util.List<Integer> findAllMatches(String content, String query) {
+        java.util.List<Integer> matches = new ArrayList<>();
+        if (content == null || content.isEmpty() || query == null || query.isEmpty()) {
+            return matches;
+        }
+        int index = 0;
+        while ((index = content.indexOf(query, index)) >= 0) {
+            matches.add(index);
+            index += query.length();
+        }
+        return matches;
+    }
+
+    private void selectSearchMatch(RichTextEditor editor, String query, java.util.List<Integer> matches, int matchIndex, Label countLabel) {
+        if (matches.isEmpty() || query == null || query.isEmpty() || matchIndex < 0 || matchIndex >= matches.size()) {
+            countLabel.setText("0 matches");
+            return;
+        }
+        int start = matches.get(matchIndex);
+        editor.selectRange(start, start + query.length());
+        editor.getTextArea().requestFocus();
+        countLabel.setText((matchIndex + 1) + " of " + matches.size() + " matches");
     }
 
     private void showInfo(String message) {
