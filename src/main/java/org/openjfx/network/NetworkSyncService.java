@@ -70,6 +70,13 @@ public final class NetworkSyncService {
         return CompletableFuture.supplyAsync(() -> fetchRemoteNote(username, noteName));
     }
 
+    public static CompletableFuture<RemoteNote> downloadRemoteNoteAsync(String username, String noteName, String author) {
+        if (!isConfigured()) {
+            return CompletableFuture.completedFuture(null);
+        }
+        return CompletableFuture.supplyAsync(() -> fetchRemoteNote(username, noteName, author));
+    }
+
     public static CompletableFuture<SyncSummary> syncAllNotesAsync(String username, File notesDir) {
         if (!isConfigured()) {
             return CompletableFuture.completedFuture(new SyncSummary(0, 0, 0, true, new ArrayList<>()));
@@ -277,8 +284,12 @@ public final class NetworkSyncService {
     }
 
     private static RemoteNote fetchRemoteNote(String username, String noteName) {
+        return fetchRemoteNote(username, noteName, null);
+    }
+
+    private static RemoteNote fetchRemoteNote(String username, String noteName, String author) {
         try {
-            HttpResponse<String> response = createClient().send(buildFetchRequest(username, noteName), HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = createClient().send(buildFetchRequest(username, noteName, author), HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 404) {
                 return null;
             }
@@ -288,8 +299,8 @@ public final class NetworkSyncService {
                 }
                 throw new IllegalStateException("Remote download failed with HTTP " + response.statusCode());
             }
-            String author = response.headers().firstValue("X-QuillPad-Author").orElse("");
-            return new RemoteNote(noteName, response.body() == null ? "" : response.body(), author);
+            String returnedAuthor = response.headers().firstValue("X-QuillPad-Author").orElse("");
+            return new RemoteNote(noteName, response.body() == null ? "" : response.body(), returnedAuthor);
         } catch (Exception e) {
             throw new RuntimeException("Failed to download remote note \"" + noteName + "\": " + safeMessage(e), e);
         }
@@ -359,9 +370,16 @@ public final class NetworkSyncService {
     }
 
     private static HttpRequest buildFetchRequest(String username, String noteName) {
+        return buildFetchRequest(username, noteName, null);
+    }
+
+    private static HttpRequest buildFetchRequest(String username, String noteName, String author) {
         String encodedUser = URLEncoder.encode(username == null ? "" : username, StandardCharsets.UTF_8);
         String encodedNote = URLEncoder.encode(noteName == null ? "" : noteName, StandardCharsets.UTF_8);
         String uri = baseUrl() + "/api/notes/content?username=" + encodedUser + "&noteName=" + encodedNote;
+        if (author != null && !author.isBlank()) {
+            uri += "&author=" + URLEncoder.encode(author, StandardCharsets.UTF_8);
+        }
         HttpRequest.Builder builder = HttpRequest.newBuilder()
             .uri(URI.create(uri))
             .timeout(Duration.ofSeconds(SettingsManager.getNetworkTimeoutSeconds()))

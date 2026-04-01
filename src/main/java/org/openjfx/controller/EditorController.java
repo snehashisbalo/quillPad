@@ -13,18 +13,13 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
-import javafx.stage.Modality;
 import org.openjfx.QuillPad;
 import org.openjfx.SettingsManager;
 import org.openjfx.ThemeManager;
 import org.openjfx.component.RichTextEditor;
-import org.quillpad.collab.CollabClient;
-import org.quillpad.collab.Document;
-import org.quillpad.collab.Message;
 
 import java.io.*;
 import java.net.URL;
@@ -42,8 +37,6 @@ public class EditorController implements Initializable {
     @FXML private Label wordCountLabel;
     @FXML private Label charCountLabel;
     @FXML private Label fileStatusLabel;
-    @FXML private Label connectionStatusLabel;
-    @FXML private Label collabStatusLabel;
 
     @FXML private MenuItem newMenuItem;
     @FXML private MenuItem openMenuItem;
@@ -65,13 +58,6 @@ public class EditorController implements Initializable {
     @FXML private MenuItem decreaseFontMenuItem;
     @FXML private MenuItem resetFontMenuItem;
 
-    @FXML private MenuItem connectMenuItem;
-    @FXML private MenuItem disconnectMenuItem;
-    @FXML private MenuItem createCollabDocMenuItem;
-    @FXML private MenuItem joinDocumentMenuItem;
-    @FXML private MenuItem leaveDocumentMenuItem;
-    @FXML private MenuItem showUsersMenuItem;
-
     @FXML private ComboBox<String> fontFamilyCombo;
     @FXML private ComboBox<Integer> fontSizeCombo;
     @FXML private ToggleButton boldButton;
@@ -80,7 +66,6 @@ public class EditorController implements Initializable {
     @FXML private ToggleButton strikethroughButton;
     @FXML private ColorPicker textColorPicker;
     @FXML private ColorPicker highlightColorPicker;
-    @FXML private Button requestWriteButton;
     @FXML private Button themeToggleButton;
 
     private QuillPad mainApp;
@@ -91,14 +76,6 @@ public class EditorController implements Initializable {
     private Map<Tab, String> tabFilePathMap = new HashMap<>();
     private Timer autoSaveTimer;
     private int untitledCounter = 1;
-
-    private CollabClient collabClient;
-    private boolean isCollaborating = false;
-    private boolean isReceivingUpdate = false;
-    private final Map<String, String> writeOwnerByDocument = new HashMap<>();
-    private final Map<String, String> collabDocNameById = new HashMap<>();
-    private final Map<String, String> collabDocOwnerById = new HashMap<>();
-    private String activeUsersText = "";
 
     private static final String[] FONT_FAMILIES = {
         "System", "Arial", "Times New Roman", "Courier New", "Consolas", 
@@ -143,7 +120,6 @@ public class EditorController implements Initializable {
                     updateStatus(editor, editor.getCaretPosition());
                 }
             }
-            refreshWriteAccessUI();
         });
 
         startAutoSave();
@@ -250,28 +226,6 @@ public class EditorController implements Initializable {
             resetFontMenuItem.setOnAction(this::handleResetFont);
         }
 
-        if (connectMenuItem != null) {
-            connectMenuItem.setOnAction(this::handleConnect);
-        }
-        if (disconnectMenuItem != null) {
-            disconnectMenuItem.setOnAction(this::handleDisconnect);
-        }
-        if (createCollabDocMenuItem != null) {
-            createCollabDocMenuItem.setOnAction(this::handleCreateCollabDoc);
-        }
-        if (joinDocumentMenuItem != null) {
-            joinDocumentMenuItem.setOnAction(this::handleJoinDocument);
-        }
-        if (leaveDocumentMenuItem != null) {
-            leaveDocumentMenuItem.setOnAction(this::handleLeaveDocument);
-        }
-        if (showUsersMenuItem != null) {
-            showUsersMenuItem.setOnAction(this::handleShowUsers);
-        }
-        if (requestWriteButton != null) {
-            requestWriteButton.setVisible(false);
-            requestWriteButton.setManaged(false);
-        }
         if (themeToggleButton != null) {
             themeToggleButton.setOnAction(this::handleThemeToggle);
             refreshThemeToggleButton();
@@ -319,21 +273,11 @@ public class EditorController implements Initializable {
     private void setupTabListeners(Tab tab, RichTextEditor editor) {
         editor.getTextArea().caretPositionProperty().addListener((caretObs, oldPos, newPos) -> {
             updateStatus(editor, newPos.intValue());
-            if (collabClient != null && collabClient.isConnected() && isCollaborativeTab(tab)) {
-                collabClient.sendCursorPosition(newPos.intValue());
-            }
         });
 
         editor.getTextArea().textProperty().addListener((obs, oldText, newText) -> {
-            if (isCollaborativeTab(tab) && !hasWriteAccessForTab(tab)) {
-                return;
-            }
             markTabModified(tab, true);
             updateStatus(editor, editor.getCaretPosition());
-
-            if (collabClient != null && collabClient.isConnected() && isCollaborativeTab(tab)) {
-                sendDocumentUpdate(tab);
-            }
         });
 
         tab.setOnCloseRequest(event -> {
@@ -476,18 +420,6 @@ public class EditorController implements Initializable {
         String tabTitle = tab.getText().replace("*", "");
 
         String filePath = tabFilePathMap.get(tab);
-
-        // Handle collaborative documents
-        if (filePath != null && filePath.startsWith("collab:")) {
-            String docId = filePath.substring(6);
-            Document doc = editor.toDocument();
-            doc.setDocumentId(docId);
-            doc.setDocumentName(tabTitle);
-            collabClient.updateDocument(doc);
-            markTabModified(tab, false);
-            fileStatusLabel.setText("Saved to server: " + tabTitle);
-            return true;
-        }
 
         // Regular file save
         if (filePath == null) {
@@ -708,10 +640,6 @@ public class EditorController implements Initializable {
 
         String currentTitle = selectedTab.getText().replace("*", "");
         String currentPath = tabFilePathMap.get(selectedTab);
-        if (currentPath != null && currentPath.startsWith("collab:")) {
-            showInfo("Renaming collaborative documents is not supported here.");
-            return;
-        }
 
         Dialog<ButtonType> dialog = new Dialog<>();
         dialog.setTitle("Rename File");
@@ -814,11 +742,6 @@ public class EditorController implements Initializable {
     }
 
     @FXML private void handleClose(ActionEvent event) {
-        if (isCollaborating && collabClient != null) {
-            collabClient.leaveDocument();
-            collabClient.disconnect();
-        }
-
         boolean hasUnsaved = false;
         for (Tab tab : tabPane.getTabs()) {
             if (isTabModified(tab)) {
@@ -998,7 +921,6 @@ public class EditorController implements Initializable {
                         "• Rich text editing (font, size, color)\n" +
                         "• Multiple tabs\n" +
                         "• Auto-save\n" +
-                        "• Real-time collaboration\n" +
                         "• Find and Replace\n" +
                         "• And more!\n\n" +
                         "Developed with JavaFX"
@@ -1142,424 +1064,6 @@ public class EditorController implements Initializable {
         }
     }
 
-    @FXML private void handleConnect(ActionEvent event) {
-        Dialog<ButtonType> dialog = new Dialog<>();
-        dialog.setTitle("Connect to Collaboration Server");
-        dialog.setHeaderText("Enter server details:");
-        dialog.initOwner(tabPane.getScene().getWindow());
-
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20, 150, 10, 10));
-
-        TextField hostField = new TextField();
-        hostField.setText("localhost");
-        TextField portField = new TextField();
-        portField.setText("9999");
-        TextField userIdField = new TextField();
-        userIdField.setText(currentUser != null ? currentUser : "User" + new Random().nextInt(1000));
-
-        grid.add(new Label("Host:"), 0, 0);
-        grid.add(hostField, 1, 0);
-        grid.add(new Label("Port:"), 0, 1);
-        grid.add(portField, 1, 1);
-        grid.add(new Label("User ID:"), 0, 2);
-        grid.add(userIdField, 1, 2);
-
-        dialog.getDialogPane().setContent(grid);
-        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
-
-        Optional<ButtonType> result = dialog.showAndWait();
-        if (result.isPresent() && result.get() == ButtonType.OK) {
-            String host = hostField.getText();
-            int port;
-            try {
-                port = Integer.parseInt(portField.getText());
-            } catch (NumberFormatException e) {
-                port = 9999;
-            }
-            String userId = userIdField.getText();
-
-            connectToServer(host, port, userId);
-        }
-    }
-
-    private void connectToServer(String host, int port, String userId) {
-        collabClient = new CollabClient(host, port);
-
-        collabClient.addMessageHandler(message -> {
-            Platform.runLater(() -> handleCollabMessage(message));
-        });
-
-        collabClient.addErrorListener(error -> {
-            Platform.runLater(() -> showError(error));
-        });
-
-        collabClient.addConnectionListener(() -> {
-            Platform.runLater(this::updateCollabUI);
-        });
-
-        if (collabClient.connect(userId)) {
-            isCollaborating = true;
-            connectionStatusLabel.setText("Connected");
-            connectionStatusLabel.setStyle("-fx-text-fill: #50fa7b;");
-            updateCollabUI();
-            showInfo("Connected to collaboration server");
-        } else {
-            showError("Failed to connect to server");
-        }
-    }
-
-    private void handleCollabMessage(Message message) {
-        String senderId = message.getSenderId();
-        boolean isFromMe = senderId != null && senderId.equals(collabClient.getUserId());
-        
-        switch (message.getType()) {
-            case DOCUMENT_SYNC:
-            case DOCUMENT_UPDATE:
-                Document doc = message.getDocument();
-                if (doc != null) {
-                    String docId = doc.getDocumentId();
-                    String docName = doc.getDocumentName();
-                    collabDocNameById.put(docId, docName);
-                    collabDocOwnerById.put(docId, doc.getOwner());
-                    if (doc.getOwner() != null && !doc.getOwner().isBlank()) {
-                        writeOwnerByDocument.putIfAbsent(docId, doc.getOwner());
-                    }
-                    
-                    // Find if we already have this document open
-                    Tab existingTab = findTabByDocumentId(docId);
-                    
-                    if (existingTab != null) {
-                        // Update existing tab - set flag to prevent loops
-                        tabPane.getSelectionModel().select(existingTab);
-                        RichTextEditor editor = tabEditorMap.get(existingTab);
-                        
-                        isReceivingUpdate = true;
-                        editor.fromDocument(doc);
-                        isReceivingUpdate = false;
-                        editor.setLanguageFromFileName(docName);
-                        
-                        markTabModified(existingTab, false);
-                        
-                        // Show notification if change is from another user
-                        if (!isFromMe) {
-                            fileStatusLabel.setText("Updated by: " + senderId);
-                            showNotification("Document Updated", docName + " was updated by " + senderId);
-                        } else {
-                            fileStatusLabel.setText("Synced: " + docName);
-                        }
-                    } else {
-                        // Create new tab for this document
-                        Tab newTab = new Tab(docName);
-                        RichTextEditor editor = new RichTextEditor();
-                        editor.setDocumentId(docId);
-                        editor.setDocumentName(docName);
-                        editor.fromDocument(doc);
-                        editor.setWrapText(wordWrapMenuItem != null && wordWrapMenuItem.isSelected());
-                        editor.setFont(Font.font(SettingsManager.getFontFamily(), SettingsManager.getFontSize()));
-                        editor.setLanguageFromFileName(docName);
-                        
-                        newTab.setContent(editor);
-                        tabEditorMap.put(newTab, editor);
-                        tabModifiedMap.put(newTab, false);
-                        
-                        // Store document ID for collaboration
-                        tabFilePathMap.put(newTab, "collab:" + docId);
-                        
-                        tabPane.getTabs().add(newTab);
-                        tabPane.getSelectionModel().select(newTab);
-                        
-                        setupCollabTabListeners(newTab, editor);
-                        
-                        if (!isFromMe) {
-                            showNotification("New Document", docName + " was shared by " + senderId);
-                        }
-                    }
-                    
-                    if (isFromMe) {
-                        fileStatusLabel.setText("Synced: " + docName);
-                    }
-                    refreshWriteAccessUI();
-                }
-                break;
-
-            case USER_LIST:
-                String users = message.getPayload();
-                if (users != null && !users.isEmpty()) {
-                    activeUsersText = users;
-                } else {
-                    activeUsersText = "";
-                }
-                refreshWriteAccessUI();
-                break;
-
-            case WRITE_ACCESS_STATUS:
-                String lockDocId = message.getDocumentId();
-                String payload = message.getPayload();
-                String owner = payload;
-                String docOwner = null;
-                if (payload != null && payload.contains("|")) {
-                    String[] parts = payload.split("\\|", 2);
-                    owner = parts.length > 0 ? parts[0] : "";
-                    docOwner = parts.length > 1 ? parts[1] : "";
-                }
-                if (lockDocId != null && !lockDocId.isBlank()) {
-                    if (owner == null || owner.isBlank()) {
-                        writeOwnerByDocument.remove(lockDocId);
-                    } else {
-                        writeOwnerByDocument.put(lockDocId, owner);
-                    }
-                    if (docOwner != null && !docOwner.isBlank()) {
-                        collabDocOwnerById.put(lockDocId, docOwner);
-                    }
-                }
-                refreshWriteAccessUI();
-                break;
-
-            case WRITE_ACCESS_REQUEST:
-                String requestDocId = message.getDocumentId();
-                String requesterUserId = message.getSenderId();
-                if (requestDocId != null && requesterUserId != null &&
-                        isCurrentUserOwnerOfDoc(requestDocId)) {
-                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                    alert.setTitle("Write Access Request");
-                    alert.setHeaderText("Grant write access?");
-                    String docName = collabDocNameById.getOrDefault(requestDocId, requestDocId);
-                    alert.setContentText(requesterUserId + " requested write access for \"" + docName + "\".");
-                    ButtonType grantButton = new ButtonType("Grant");
-                    ButtonType denyButton = new ButtonType("Deny");
-                    alert.getButtonTypes().setAll(grantButton, denyButton);
-                    Optional<ButtonType> choice = alert.showAndWait();
-                    if (choice.isPresent() && choice.get() == grantButton) {
-                        collabClient.grantWriteAccess(requestDocId, requesterUserId);
-                    }
-                }
-                break;
-
-            case ERROR:
-                showError(message.getPayload());
-                break;
-
-            default:
-                break;
-        }
-    }
-    
-    private Tab findTabByDocumentId(String docId) {
-        for (Tab tab : tabPane.getTabs()) {
-            String path = tabFilePathMap.get(tab);
-            if (path != null && path.equals("collab:" + docId)) {
-                return tab;
-            }
-        }
-        return null;
-    }
-    
-    private void setupCollabTabListeners(Tab tab, RichTextEditor editor) {
-        String docId = editor.getDocumentId();
-        
-        editor.getTextArea().caretPositionProperty().addListener((caretObs, oldPos, newPos) -> {
-            updateStatus(editor, newPos.intValue());
-            if (collabClient != null && collabClient.isConnected()) {
-                collabClient.sendCursorPosition(newPos.intValue());
-            }
-        });
-
-        editor.getTextArea().textProperty().addListener((obs, oldText, newText) -> {
-            // Don't send updates if we're receiving a remote update
-            if (isReceivingUpdate) {
-                return;
-            }
-            
-            markTabModified(tab, true);
-            updateStatus(editor, editor.getCaretPosition());
-
-            if (collabClient != null && collabClient.isConnected() && oldText != null && !oldText.equals(newText)) {
-                sendDocumentUpdate(tab);
-            }
-        });
-
-        tab.setOnCloseRequest(event -> {
-            // Leave the collaborative document when closing tab
-            if (docId != null && collabClient != null && collabClient.isConnected()) {
-                collabClient.leaveDocument();
-            }
-            
-            if (isTabModified(tab)) {
-                event.consume();
-                if (confirmCloseTab(tab)) {
-                    tabPane.getTabs().remove(tab);
-                }
-            } else {
-                tabPane.getTabs().remove(tab);
-            }
-        });
-    }
-
-    private void updateCollabUI() {
-        if (collabClient != null && collabClient.isConnected()) {
-            connectMenuItem.setDisable(true);
-            disconnectMenuItem.setDisable(false);
-            createCollabDocMenuItem.setDisable(false);
-            joinDocumentMenuItem.setDisable(false);
-            showUsersMenuItem.setDisable(false);
-            refreshWriteAccessUI();
-
-            if (collabClient.getCurrentDocumentId() != null) {
-                leaveDocumentMenuItem.setDisable(false);
-            }
-        } else {
-            connectMenuItem.setDisable(false);
-            disconnectMenuItem.setDisable(true);
-            createCollabDocMenuItem.setDisable(true);
-            joinDocumentMenuItem.setDisable(true);
-            leaveDocumentMenuItem.setDisable(true);
-            showUsersMenuItem.setDisable(true);
-            if (requestWriteButton != null) {
-                requestWriteButton.setDisable(true);
-                requestWriteButton.setText("Live Edit");
-            }
-            connectionStatusLabel.setText("Offline");
-            connectionStatusLabel.setStyle("-fx-text-fill: #ff5555;");
-        }
-    }
-
-    @FXML private void handleDisconnect(ActionEvent event) {
-        if (collabClient != null) {
-            collabClient.leaveDocument();
-            collabClient.disconnect();
-            isCollaborating = false;
-            writeOwnerByDocument.clear();
-            collabDocNameById.clear();
-            collabDocOwnerById.clear();
-            activeUsersText = "";
-            connectionStatusLabel.setText("Offline");
-            connectionStatusLabel.setStyle("-fx-text-fill: #ff5555;");
-            collabStatusLabel.setText("");
-            updateCollabUI();
-            showInfo("Disconnected from server");
-        }
-    }
-
-    @FXML private void handleCreateCollabDoc(ActionEvent event) {
-        TextInputDialog dialog = new TextInputDialog();
-        dialog.setTitle("Create Shared Document");
-        dialog.setHeaderText("Enter document name:");
-        dialog.setContentText("Document Name:");
-
-        Optional<String> result = dialog.showAndWait();
-        result.ifPresent(name -> {
-            if (!name.isEmpty() && collabClient != null) {
-                collabClient.createDocument(name);
-            }
-        });
-    }
-
-    @FXML private void handleJoinDocument(ActionEvent event) {
-        if (collabClient == null || !collabClient.isConnected()) {
-            showError("Not connected to server");
-            return;
-        }
-
-        Dialog<ButtonType> dialog = new Dialog<>();
-        dialog.setTitle("Join Document");
-        dialog.setHeaderText("Select a shared document");
-        dialog.getDialogPane().setPrefSize(780, 520);
-
-        ObservableList<String> docsModel = FXCollections.observableArrayList(collabClient.getDocumentList());
-        ListView<String> listView = new ListView<>(docsModel);
-        listView.setPrefSize(740, 420);
-
-        Label help = new Label("Tip: Select a document then use Join or Delete.");
-        VBox container = new VBox(10, help, listView);
-        container.setPadding(new Insets(8, 4, 4, 4));
-        dialog.getDialogPane().setContent(container);
-
-        ButtonType joinButtonType = new ButtonType("Join", ButtonBar.ButtonData.OK_DONE);
-        ButtonType deleteButtonType = new ButtonType("Delete Selected");
-        ButtonType refreshButtonType = new ButtonType("Refresh");
-        dialog.getDialogPane().getButtonTypes().addAll(joinButtonType, deleteButtonType, refreshButtonType, ButtonType.CANCEL);
-
-        Button joinButton = (Button) dialog.getDialogPane().lookupButton(joinButtonType);
-        Button deleteButton = (Button) dialog.getDialogPane().lookupButton(deleteButtonType);
-        Button refreshButton = (Button) dialog.getDialogPane().lookupButton(refreshButtonType);
-        joinButton.disableProperty().bind(listView.getSelectionModel().selectedItemProperty().isNull());
-        deleteButton.disableProperty().bind(listView.getSelectionModel().selectedItemProperty().isNull());
-
-        refreshButton.addEventFilter(ActionEvent.ACTION, e -> {
-            e.consume();
-            docsModel.setAll(collabClient.getDocumentList());
-        });
-
-        deleteButton.addEventFilter(ActionEvent.ACTION, e -> {
-            e.consume();
-            String selected = listView.getSelectionModel().getSelectedItem();
-            if (selected == null) {
-                return;
-            }
-            String docId = extractDocumentId(selected);
-            if (docId == null) {
-                return;
-            }
-            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-            confirm.setTitle("Delete Document");
-            confirm.setHeaderText("Delete selected shared document?");
-            confirm.setContentText(selected);
-            Optional<ButtonType> confirmation = confirm.showAndWait();
-            if (confirmation.isPresent() && confirmation.get() == ButtonType.OK) {
-                collabClient.deleteDocument(docId);
-                docsModel.remove(selected);
-            }
-        });
-
-        Optional<ButtonType> result = dialog.showAndWait();
-        if (result.isPresent() && result.get() == joinButtonType) {
-            String selected = listView.getSelectionModel().getSelectedItem();
-            String docId = extractDocumentId(selected);
-            if (docId != null) {
-                collabClient.joinDocument(docId);
-                leaveDocumentMenuItem.setDisable(false);
-                showInfo("Joined document: " + selected);
-            }
-        }
-    }
-
-    private String extractDocumentId(String documentListEntry) {
-        if (documentListEntry == null) {
-            return null;
-        }
-        int separator = documentListEntry.indexOf(':');
-        if (separator <= 0) {
-            return null;
-        }
-        return documentListEntry.substring(0, separator);
-    }
-
-    @FXML private void handleLeaveDocument(ActionEvent event) {
-        if (collabClient != null) {
-            collabClient.leaveDocument();
-            leaveDocumentMenuItem.setDisable(true);
-            collabStatusLabel.setText("");
-            activeUsersText = "";
-            refreshWriteAccessUI();
-            showInfo("Left document");
-        }
-    }
-
-    @FXML private void handleShowUsers(ActionEvent event) {
-        if (collabClient != null) {
-            List<String> users = collabClient.getActiveUsers();
-            String userList = users.isEmpty() ? "No other users" : String.join(", ", users);
-            showInfo("Active users: " + userList);
-        }
-    }
-
-    @FXML private void handleRequestWriteAccess(ActionEvent event) {
-        showInfo("Live editing is enabled for everyone in the active shared document.");
-    }
-
     @FXML private void handleThemeToggle(ActionEvent event) {
         ThemeManager.toggleTheme();
         for (RichTextEditor editor : tabEditorMap.values()) {
@@ -1577,105 +1081,12 @@ public class EditorController implements Initializable {
         themeToggleButton.setTooltip(new Tooltip("Theme: " + current.getDisplayName() + " (click to toggle)"));
     }
 
-    private void sendDocumentUpdate(Tab tab) {
-        if (collabClient != null && collabClient.isConnected() && tab != null) {
-            String docId = getCollabDocumentId(tab);
-            if (docId == null) {
-                return;
-            }
-
-            RichTextEditor editor = tabEditorMap.get(tab);
-            if (editor == null) {
-                return;
-            }
-
-            Document doc = editor.toDocument();
-            doc.setDocumentId(docId);
-            doc.setDocumentName(tab.getText().replace("*", ""));
-            collabClient.updateDocument(doc);
-        }
-    }
-
-    private String getCollabDocumentId(Tab tab) {
-        if (tab == null) {
-            return null;
-        }
-        String filePath = tabFilePathMap.get(tab);
-        if (filePath != null && filePath.startsWith("collab:")) {
-            return filePath.substring(6);
-        }
-        return null;
-    }
-
-    private String getSelectedCollabDocumentId() {
-        return getCollabDocumentId(tabPane.getSelectionModel().getSelectedItem());
-    }
-
-    private boolean isCollaborativeTab(Tab tab) {
-        return getCollabDocumentId(tab) != null;
-    }
-
-    private boolean hasWriteAccessForTab(Tab tab) {
-        String docId = getCollabDocumentId(tab);
-        return docId == null || hasWriteAccessForDocument(docId);
-    }
-
-    private boolean hasWriteAccessForDocument(String docId) {
-        return docId != null && collabClient != null && collabClient.isConnected();
-    }
-
-    private boolean isCurrentUserOwnerOfDoc(String docId) {
-        if (docId == null || collabClient == null) {
-            return false;
-        }
-        String owner = collabDocOwnerById.get(docId);
-        String me = collabClient.getUserId();
-        return owner != null && me != null && owner.equals(me);
-    }
-
-    private void refreshWriteAccessUI() {
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        String docId = getCollabDocumentId(selectedTab);
-        boolean isCollabDoc = docId != null && collabClient != null && collabClient.isConnected();
-
-        if (requestWriteButton != null) {
-            requestWriteButton.setDisable(true);
-        }
-
-        if (isCollabDoc) {
-            String docName = collabDocNameById.getOrDefault(docId, docId);
-            String usersText = activeUsersText == null || activeUsersText.isBlank() ? "none" : activeUsersText;
-            collabStatusLabel.setText("Active Doc: " + docName + " | Users: " + usersText);
-
-            if (requestWriteButton != null) {
-                requestWriteButton.setText("Live Edit");
-            }
-        } else if (requestWriteButton != null) {
-            requestWriteButton.setText("Live Edit");
-        }
-
-        if (selectedTab != null) {
-            RichTextEditor editor = tabEditorMap.get(selectedTab);
-            if (editor != null) {
-                editor.getTextArea().setEditable(true);
-            }
-        }
-    }
-
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Error");
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
-    }
-
-    private void showNotification(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.show();
     }
 
     private void showInfo(String message) {

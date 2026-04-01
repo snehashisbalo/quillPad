@@ -1,8 +1,9 @@
 #QuillPad Settings
-#Sat Feb 21 19:08:15 GMT+06:00 2026
+#Wed Apr 01 23:56:24 GMT+06:00 2026
 font.family=Times New Roman
 font.size=32
 network.api_key=
 network.base_url=http\://localhost\:8080
 network.enabled=true
-theme=TOKYO_NIGHT
+starred.notes=
+theme=CATPPUCCIN

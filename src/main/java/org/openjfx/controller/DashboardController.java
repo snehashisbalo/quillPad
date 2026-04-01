@@ -571,16 +571,17 @@ public class DashboardController implements Initializable {
         dialog.showAndWait();
     }
 
-    private File resolveLocalTarget(String noteName) {
+    private File resolveLocalTarget(String noteName, String author) {
         String safeName = sanitizeName(noteName);
+        String safeAuthor = sanitizeName(author == null || author.isBlank() ? "unknown" : author);
         String ext = extensionOf(safeName);
-        File target = new File(notesDir, ext.isEmpty() ? safeName + ".txt" : safeName);
+        String base = removeExtension(safeName);
+        String suffixExt = ext.isEmpty() ? ".txt" : ext;
+        File target = new File(notesDir, base + "-by-" + safeAuthor + suffixExt);
         if (!target.exists()) {
             return target;
         }
-        String base = removeExtension(safeName);
-        String suffixExt = ext.isEmpty() ? ".txt" : ext;
-        return new File(notesDir, base + "-remote-" + System.currentTimeMillis() + suffixExt);
+        return new File(notesDir, base + "-by-" + safeAuthor + "-remote-" + System.currentTimeMillis() + suffixExt);
     }
 
     private List<String> listLocalNotesForUpload() {
@@ -609,9 +610,10 @@ public class DashboardController implements Initializable {
 
             for (NetworkSyncService.RemoteNoteRef ref : noteRefs) {
                 String noteName = ref.noteName();
+                String author = ref.author();
                 try {
                     NetworkSyncService.RemoteNote note =
-                        NetworkSyncService.downloadRemoteNoteAsync(remoteNamespace(), noteName).join();
+                        NetworkSyncService.downloadRemoteNoteAsync(remoteNamespace(), noteName, author).join();
                     if (note == null) {
                         failed++;
                         if (errors.size() < 3) {
@@ -619,7 +621,7 @@ public class DashboardController implements Initializable {
                         }
                         continue;
                     }
-                    File target = resolveLocalTarget(note.noteName());
+                    File target = resolveLocalTarget(note.noteName(), author);
                     Files.writeString(target.toPath(), note.content());
                     success++;
                     if (savedFiles.size() < 5) {

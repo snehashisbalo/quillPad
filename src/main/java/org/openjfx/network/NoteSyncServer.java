@@ -14,6 +14,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +25,7 @@ public class NoteSyncServer {
 
     private static final int DEFAULT_PORT = 8080;
     private static final Path BASE_DIR = Paths.get("remote-notes");
+    private static final String AUTHOR_NOTE_SEPARATOR = "__qp_author__";
 
     public static void main(String[] args) throws IOException {
         int port = readPort(args);
@@ -100,10 +103,11 @@ public class NoteSyncServer {
 
                 Path userDir = BASE_DIR.resolve(safeUser);
                 Files.createDirectories(userDir);
-                Path noteFile = userDir.resolve(safeNote);
-                Files.writeString(noteFile, content == null ? "" : content, StandardCharsets.UTF_8);
-                Path authorFile = userDir.resolve(safeNote + ".author");
                 String safeAuthor = isBlank(author) ? safeUser : sanitizeSegment(author);
+                String storedNoteName = toAuthorScopedNoteName(safeNote, safeAuthor);
+                Path noteFile = userDir.resolve(storedNoteName);
+                Files.writeString(noteFile, content == null ? "" : content, StandardCharsets.UTF_8);
+                Path authorFile = userDir.resolve(storedNoteName + ".author");
                 Files.writeString(authorFile, safeAuthor, StandardCharsets.UTF_8);
 
                 sendJson(exchange, 200, "{\"status\":\"ok\"}");
@@ -147,6 +151,7 @@ public class NoteSyncServer {
                 }
 
                 String safeUser = sanitizeSegment(username);
+                Path userDir = BASE_DIR.resolve(safeUser);
                 String method = exchange.getRequestMethod();
                 if ("DELETE".equalsIgnoreCase(method)) {
                     String noteName = query.get("noteName");
@@ -155,37 +160,40 @@ public class NoteSyncServer {
                         return;
                     }
                     String safeNote = sanitizeSegment(noteName);
-                    Path noteFile = resolveNoteFile(BASE_DIR.resolve(safeUser), safeNote);
-                    if (Files.exists(noteFile)) {
-                        Files.delete(noteFile);
-                    }
-                    Path authorFile = BASE_DIR.resolve(safeUser).resolve(safeNote + ".author");
-                    if (Files.exists(authorFile)) {
-                        Files.delete(authorFile);
+                    String author = query.get("author");
+                    if (!isBlank(author)) {
+                        String safeAuthor = sanitizeSegment(author);
+                        String scopedName = toAuthorScopedNoteName(safeNote, safeAuthor);
+                        Files.deleteIfExists(userDir.resolve(scopedName));
+                        Files.deleteIfExists(userDir.resolve(scopedName + ".txt"));
+                        Files.deleteIfExists(userDir.resolve(scopedName + ".author"));
+                    } else {
+                        Path noteFile = resolveNoteFile(userDir, safeNote);
+                        Files.deleteIfExists(noteFile);
+                        Files.deleteIfExists(userDir.resolve(safeNote + ".author"));
                     }
                     sendJson(exchange, 200, "{\"status\":\"ok\"}");
                     return;
                 }
                 if ("GET".equalsIgnoreCase(method)) {
-                    Path userDir = BASE_DIR.resolve(safeUser);
                     if (!Files.exists(userDir) || !Files.isDirectory(userDir)) {
                         sendText(exchange, 200, "");
                         return;
                     }
-                    StringBuilder out = new StringBuilder();
+                    List<String> lines = new ArrayList<>();
                     try (var stream = Files.list(userDir)) {
                         stream.filter(Files::isRegularFile)
                             .map(path -> path.getFileName().toString())
                             .filter(name -> !name.endsWith(".author"))
-                            .sorted()
-                            .forEach(safeNote -> {
-                                if (!out.isEmpty()) {
-                                    out.append('\n');
-                                }
-                                out.append(safeNote).append('\t').append(resolveAuthor(userDir, safeNote, safeUser));
+                            .forEach(storedName -> {
+                                String[] parsed = parseAuthorScopedNoteName(storedName);
+                                String noteNameForList = parsed != null ? parsed[0] : storedName;
+                                String authorForList = parsed != null ? parsed[1] : resolveAuthor(userDir, storedName, safeUser);
+                                lines.add(noteNameForList + "\t" + authorForList);
                             });
                     }
-                    sendText(exchange, 200, out.toString());
+                    lines.sort(Comparator.naturalOrder());
+                    sendText(exchange, 200, String.join("\n", lines));
                     return;
                 }
                 sendJson(exchange, 405, "{\"error\":\"Method not allowed\"}");
@@ -216,20 +224,37 @@ public class NoteSyncServer {
                 Map<String, String> query = parseQuery(exchange.getRequestURI());
                 String username = query.get("username");
                 String noteName = query.get("noteName");
+                String author = query.get("author");
                 if (isBlank(username) || isBlank(noteName)) {
                     sendJson(exchange, 400, "{\"error\":\"username and noteName are required\"}");
                     return;
                 }
                 String safeUser = sanitizeSegment(username);
                 String safeNote = sanitizeSegment(noteName);
-                Path noteFile = resolveNoteFile(BASE_DIR.resolve(safeUser), safeNote);
+                Path userDir = BASE_DIR.resolve(safeUser);
+                Path noteFile;
+                if (!isBlank(author)) {
+                    String safeAuthor = sanitizeSegment(author);
+                    noteFile = resolveAuthorScopedNoteFile(userDir, safeNote, safeAuthor);
+                    if (!Files.exists(noteFile)) {
+                        Path legacy = resolveNoteFile(userDir, safeNote);
+                        if (Files.exists(legacy)) {
+                            String legacyAuthor = resolveAuthor(userDir, legacy.getFileName().toString(), safeUser);
+                            if (safeAuthor.equals(legacyAuthor)) {
+                                noteFile = legacy;
+                            }
+                        }
+                    }
+                } else {
+                    noteFile = resolveNoteFile(userDir, safeNote);
+                }
                 if (!Files.exists(noteFile)) {
                     sendJson(exchange, 404, "{\"error\":\"Note not found\"}");
                     return;
                 }
                 String content = Files.readString(noteFile, StandardCharsets.UTF_8);
-                String author = resolveAuthor(BASE_DIR.resolve(safeUser), safeNote, safeUser);
-                sendText(exchange, 200, content, author);
+                String resolvedAuthor = resolveAuthor(userDir, noteFile.getFileName().toString(), safeUser);
+                sendText(exchange, 200, content, resolvedAuthor);
             } catch (Exception e) {
                 sendJson(exchange, 500, "{\"error\":\"Internal server error\"}");
             }
@@ -344,6 +369,10 @@ public class NoteSyncServer {
             }
         } catch (Exception ignored) {
         }
+        String[] parsed = parseAuthorScopedNoteName(safeNote);
+        if (parsed != null && !parsed[1].isBlank()) {
+            return parsed[1];
+        }
         return fallback;
     }
 
@@ -452,6 +481,36 @@ public class NoteSyncServer {
             return txt;
         }
         return direct;
+    }
+
+    private static Path resolveAuthorScopedNoteFile(Path userDir, String safeNote, String safeAuthor) {
+        String scoped = toAuthorScopedNoteName(safeNote, safeAuthor);
+        Path direct = userDir.resolve(scoped);
+        if (Files.exists(direct)) {
+            return direct;
+        }
+        Path txt = userDir.resolve(scoped + ".txt");
+        if (Files.exists(txt)) {
+            return txt;
+        }
+        return direct;
+    }
+
+    private static String toAuthorScopedNoteName(String safeNote, String safeAuthor) {
+        return safeNote + AUTHOR_NOTE_SEPARATOR + safeAuthor;
+    }
+
+    private static String[] parseAuthorScopedNoteName(String storedName) {
+        int split = storedName.lastIndexOf(AUTHOR_NOTE_SEPARATOR);
+        if (split <= 0 || split >= storedName.length() - AUTHOR_NOTE_SEPARATOR.length()) {
+            return null;
+        }
+        String note = storedName.substring(0, split);
+        String author = storedName.substring(split + AUTHOR_NOTE_SEPARATOR.length());
+        if (note.isBlank() || author.isBlank()) {
+            return null;
+        }
+        return new String[]{note, author};
     }
 
     private static String sanitizeSegment(String raw) {

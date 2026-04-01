@@ -52,19 +52,6 @@
                         </items>
                     </Menu>
 
-                    <Menu text="Collaborate">
-                        <items>
-                            <MenuItem fx:id="connectMenuItem" text="Connect to Server..."/>
-                            <MenuItem fx:id="disconnectMenuItem" text="Disconnect" disable="true"/>
-                            <SeparatorMenuItem/>
-                            <MenuItem fx:id="createCollabDocMenuItem" text="Create Shared Document..." disable="true"/>
-                            <MenuItem fx:id="joinDocumentMenuItem" text="Join Document..." disable="true"/>
-                            <MenuItem fx:id="leaveDocumentMenuItem" text="Leave Document" disable="true"/>
-                            <SeparatorMenuItem/>
-                            <MenuItem fx:id="showUsersMenuItem" text="Show Active Users" disable="true"/>
-                        </items>
-                    </Menu>
-
                     <Menu text="Help">
                         <items>
                             <MenuItem fx:id="aboutMenuItem" text="About QuillPad"/>
@@ -153,9 +140,6 @@
                 
                 <Region HBox.hgrow="ALWAYS"/>
 
-                <Button fx:id="requestWriteButton" text="Request Write" disable="true"/>
-                
-                <Label fx:id="connectionStatusLabel" text="Offline" styleClass="connection-status"/>
             </ToolBar>
         </VBox>
     </top>
@@ -200,10 +184,6 @@
                        styleClass="status-item"/>
 
                 <Region HBox.hgrow="ALWAYS"/>
-
-                <Label fx:id="collabStatusLabel" 
-                       text="" 
-                       styleClass="collab-status"/>
 
                 <Label text="QuillPad v1.0"
                        styleClass="version-label"/>
