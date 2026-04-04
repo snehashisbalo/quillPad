@@ -9,6 +9,7 @@ import org.openjfx.controller.DashboardController;
 import org.openjfx.controller.EditorController;
 import org.openjfx.controller.LoginController;
 
+import java.io.File;
 import java.io.IOException;
 
 public class QuillPad extends Application {
@@ -60,20 +61,22 @@ public class QuillPad extends Application {
         }
     }
 
-    private void loadEditorScene(String noteName) throws IOException {
+    private void loadEditorScene(String noteName, File fileToOpen) throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("editor.fxml"));
         editorScene = new Scene(loader.load(), 1100, 750);
         ThemeManager.registerScene(editorScene);
         EditorController controller = loader.getController();
         controller.setMainApp(this);
         controller.setCurrentUser(currentUser);
-        controller.setCurrentNote(noteName);
+        if (fileToOpen != null) {
+            controller.openFile(fileToOpen);
+        } else {
+            controller.setCurrentNote(noteName);
+        }
     }
 
     public void showLogin() {
-        primaryStage.setScene(loginScene);
-        primaryStage.setWidth(800);
-        primaryStage.setHeight(520);
+        applyScenePreservingWindowState(loginScene);
         currentUser = null;
     }
 
@@ -82,9 +85,7 @@ public class QuillPad extends Application {
             this.currentUser = username;
             dashboardScene = null;
             loadDashboardScene();
-            primaryStage.setScene(dashboardScene);
-            primaryStage.setWidth(920);
-            primaryStage.setHeight(580);
+            applyScenePreservingWindowState(dashboardScene);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -92,13 +93,50 @@ public class QuillPad extends Application {
 
     public void showEditor(String noteName) {
         try {
-            loadEditorScene(noteName);
-            primaryStage.setScene(editorScene);
-            primaryStage.setWidth(1100);
-            primaryStage.setHeight(750);
+            loadEditorScene(noteName, null);
+            applyScenePreservingWindowState(editorScene);
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void showEditor(File fileToOpen) {
+        try {
+            loadEditorScene(null, fileToOpen);
+            applyScenePreservingWindowState(editorScene);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void applyScenePreservingWindowState(Scene nextScene) {
+        if (primaryStage == null || nextScene == null) {
+            return;
+        }
+
+        if (!primaryStage.isShowing()) {
+            primaryStage.setScene(nextScene);
+            return;
+        }
+
+        boolean wasFullScreen = primaryStage.isFullScreen();
+        boolean wasMaximized = primaryStage.isMaximized();
+        double width = primaryStage.getWidth();
+        double height = primaryStage.getHeight();
+        double x = primaryStage.getX();
+        double y = primaryStage.getY();
+
+        primaryStage.setScene(nextScene);
+
+        if (!wasFullScreen && !wasMaximized) {
+            primaryStage.setX(x);
+            primaryStage.setY(y);
+            primaryStage.setWidth(width);
+            primaryStage.setHeight(height);
+        }
+
+        primaryStage.setMaximized(wasMaximized);
+        primaryStage.setFullScreen(wasFullScreen);
     }
 
     public String getCurrentUser() {

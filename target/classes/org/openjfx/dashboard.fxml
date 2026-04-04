@@ -29,6 +29,17 @@
                     </font>
                 </Button>
 
+                <Button fx:id="openFileButton"
+                        text="📂 Open File"
+                        styleClass="sidebar-button"
+                        onAction="#handleOpenFile"
+                        maxWidth="Infinity"
+                        prefHeight="40">
+                    <VBox.margin>
+                        <Insets top="8"/>
+                    </VBox.margin>
+                </Button>
+
                 <Separator styleClass="sidebar-separator">
                     <VBox.margin>
                         <Insets top="10" bottom="10"/>

@@ -16,6 +16,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import javafx.stage.FileChooser;
 import org.openjfx.QuillPad;
 import org.openjfx.SettingsManager;
 import org.openjfx.ThemeManager;
@@ -55,6 +56,9 @@ public class DashboardController implements Initializable {
 
     @FXML
     private Button deleteButton;
+
+    @FXML
+    private Button openFileButton;
 
     @FXML
     private Button refreshButton;
@@ -243,7 +247,26 @@ public class DashboardController implements Initializable {
 
     @FXML
     private void handleNewProject(ActionEvent event) {
-        mainApp.showEditor(null);
+        mainApp.showEditor((String) null);
+    }
+
+    @FXML
+    private void handleOpenFile(ActionEvent event) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Open File");
+        fileChooser.getExtensionFilters().addAll(
+            new FileChooser.ExtensionFilter("All Files", "*.*"),
+            new FileChooser.ExtensionFilter("Text Files", "*.txt", "*.md", "*.json", "*.xml", "*.yaml", "*.yml"),
+            new FileChooser.ExtensionFilter("Code Files", "*.java", "*.py", "*.js", "*.ts", "*.c", "*.cpp", "*.cs", "*.go", "*.rs", "*.php", "*.rb", "*.sql", "*.css", "*.html", "*.sh")
+        );
+        if (notesDir != null && notesDir.exists()) {
+            fileChooser.setInitialDirectory(notesDir);
+        }
+
+        File selectedFile = fileChooser.showOpenDialog(mainApp.getPrimaryStage());
+        if (selectedFile != null) {
+            mainApp.showEditor(selectedFile);
+        }
     }
 
     @FXML

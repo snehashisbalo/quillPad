@@ -72,13 +72,26 @@
 .form-input {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-insets: 0;
+    -fx-background-radius: 0;
+    -fx-border-radius: 0;
     -fx-text-fill: -fx-input-text;
     -fx-prompt-text-fill: -fx-input-prompt;
     -fx-font-size: 14px;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-effect: null;
 }
 
 .form-input:focused {
     -fx-border-color: transparent;
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-insets: 0;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-effect: null;
 }
 
 .input-icon {

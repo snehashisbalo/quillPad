@@ -77,6 +77,7 @@ public class EditorController implements Initializable {
     private Map<Tab, RichTextEditor> tabEditorMap = new HashMap<>();
     private Map<Tab, Boolean> tabModifiedMap = new HashMap<>();
     private Map<Tab, String> tabFilePathMap = new HashMap<>();
+    private Map<Tab, String> tabManagedNotePathMap = new HashMap<>();
     private Timer autoSaveTimer;
     private int untitledCounter = 1;
 
@@ -85,6 +86,9 @@ public class EditorController implements Initializable {
         "Verdana", "Georgia", "Comic Sans MS", "Trebuchet MS", "Lucida Console"
     };
     private static final Integer[] FONT_SIZES = {8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 72};
+    private static final List<String> SAVEABLE_EXTENSIONS = List.of(
+            ".txt", ".c", ".cpp", ".java", ".py", ".html"
+    );
 
     public void setMainApp(QuillPad mainApp) {
         this.mainApp = mainApp;
@@ -135,6 +139,7 @@ public class EditorController implements Initializable {
                         tabEditorMap.remove(removedTab);
                         tabModifiedMap.remove(removedTab);
                         tabFilePathMap.remove(removedTab);
+                        tabManagedNotePathMap.remove(removedTab);
                     }
                 }
             }
@@ -429,6 +434,7 @@ public class EditorController implements Initializable {
                 editor.setFont(Font.font(SettingsManager.getFontFamily(), SettingsManager.getFontSize()));
                 editor.setLanguageFromFileName(file.getName());
                 tabFilePathMap.put(currentTab, file.getAbsolutePath());
+                tabManagedNotePathMap.put(currentTab, file.getAbsolutePath());
                 markTabModified(currentTab, false);
                 fileStatusLabel.setText("Loaded");
             } catch (IOException | ClassNotFoundException e) {
@@ -442,26 +448,15 @@ public class EditorController implements Initializable {
 
     private boolean saveTab(Tab tab) {
         RichTextEditor editor = tabEditorMap.get(tab);
-        String tabTitle = tab.getText().replace("*", "");
-
         String filePath = tabFilePathMap.get(tab);
 
-        // Regular file save
-        if (filePath == null) {
-            String userNotesDir = getUserNotesDir();
-            File notesDir = new File(userNotesDir);
-            if (!notesDir.exists()) {
-                notesDir.mkdirs();
+        if (filePath == null || filePath.isBlank()) {
+            File targetFile = promptForSaveLocation(tab);
+            if (targetFile == null) {
+                fileStatusLabel.setText("Save cancelled");
+                return false;
             }
-            String baseName = sanitizeFileName(tabTitle);
-            if (baseName.isBlank()) {
-                baseName = "Untitled";
-            }
-            String fileName = baseName.matches(".*\\.[A-Za-z0-9]+$") ? baseName : baseName + ".txt";
-            File target = new File(notesDir, fileName);
-            filePath = target.getAbsolutePath();
-            tab.setText(formatTabTitleForFileName(fileName));
-            tabFilePathMap.put(tab, filePath);
+            filePath = targetFile.getAbsolutePath();
         }
 
         File file = new File(filePath);
@@ -470,6 +465,7 @@ public class EditorController implements Initializable {
         try {
             writeEditorToFile(editor, file);
             tabFilePathMap.put(tab, file.getAbsolutePath());
+            syncManagedNoteCopy(tab, file, editor);
             editor.setLanguageFromFileName(file.getName());
             markTabModified(tab, false);
             fileStatusLabel.setText("Saved: " + file.getName());
@@ -569,18 +565,28 @@ public class EditorController implements Initializable {
 
         File file = fileChooser.showOpenDialog(tabPane.getScene().getWindow());
         if (file != null) {
-            try {
-                String fileName = file.getName();
-                createNewTab(fileName);
-                Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
-                RichTextEditor editor = tabEditorMap.get(currentTab);
-                loadEditorFromFile(editor, file);
-                editor.setLanguageFromFileName(file.getName());
-                tabFilePathMap.put(currentTab, file.getAbsolutePath());
-                markTabModified(currentTab, false);
-            } catch (IOException | ClassNotFoundException e) {
-                showError("Failed to open file: " + e.getMessage());
+            openFile(file);
+        }
+    }
+
+    public void openFile(File file) {
+        if (file == null) {
+            return;
+        }
+        try {
+            String fileName = file.getName();
+            createNewTab(fileName);
+            Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
+            RichTextEditor editor = tabEditorMap.get(currentTab);
+            loadEditorFromFile(editor, file);
+            editor.setLanguageFromFileName(file.getName());
+            tabFilePathMap.put(currentTab, file.getAbsolutePath());
+            if (isManagedNotesFile(file)) {
+                tabManagedNotePathMap.put(currentTab, file.getAbsolutePath());
             }
+            markTabModified(currentTab, false);
+        } catch (IOException | ClassNotFoundException e) {
+            showError("Failed to open file: " + e.getMessage());
         }
     }
 
@@ -630,61 +636,217 @@ public class EditorController implements Initializable {
     @FXML private void handleSaveAs(ActionEvent event) {
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
         if (selectedTab != null) {
-            Dialog<ButtonType> dialog = new Dialog<>();
-            dialog.setTitle("Save As");
-            dialog.setHeaderText("Choose file name and extension");
-
-            ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
-            dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
-
-            GridPane grid = new GridPane();
-            grid.setHgap(10);
-            grid.setVgap(10);
-            grid.setPadding(new Insets(20, 150, 10, 10));
-
-            String currentTitle = selectedTab.getText().replace("*", "");
-            String currentBaseName = currentTitle;
-            String currentExt = ".txt";
-            int dot = currentTitle.lastIndexOf('.');
-            if (dot > 0 && dot < currentTitle.length() - 1) {
-                currentBaseName = currentTitle.substring(0, dot);
-                currentExt = currentTitle.substring(dot);
-            }
-
-            TextField nameField = new TextField(currentBaseName);
-            ComboBox<String> extensionCombo = new ComboBox<>();
-            extensionCombo.setItems(FXCollections.observableArrayList(
-                    ".txt", ".c", ".cpp", ".java", ".py", ".html"
-            ));
-            extensionCombo.setEditable(true);
-            extensionCombo.setValue(currentExt);
-
-            grid.add(new Label("Name:"), 0, 0);
-            grid.add(nameField, 1, 0);
-            grid.add(new Label("Extension:"), 0, 1);
-            grid.add(extensionCombo, 1, 1);
-
-            dialog.getDialogPane().setContent(grid);
-            Platform.runLater(nameField::requestFocus);
-
-            Optional<ButtonType> result = dialog.showAndWait();
-            if (result.isPresent() && result.get() == saveButtonType) {
-                String name = nameField.getText() == null ? "" : nameField.getText().trim();
-                String ext = extensionCombo.getValue() == null ? ".txt" : extensionCombo.getValue().trim();
-
-                if (!name.isEmpty()) {
-                    if (ext.isEmpty()) {
-                        ext = ".txt";
-                    } else if (!ext.startsWith(".")) {
-                        ext = "." + ext;
-                    }
-
-                    selectedTab.setText(formatTabTitleForFileName(name + ext));
-                    tabFilePathMap.remove(selectedTab);
-                    saveTab(selectedTab);
-                }
+            File targetFile = promptForSaveLocation(selectedTab);
+            if (targetFile != null) {
+                saveTab(selectedTab);
             }
         }
+    }
+
+    private File promptForSaveLocation(Tab tab) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save As");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Text Files", "*.txt"),
+                new FileChooser.ExtensionFilter("C Files", "*.c"),
+                new FileChooser.ExtensionFilter("C++ Files", "*.cpp"),
+                new FileChooser.ExtensionFilter("Java Files", "*.java"),
+                new FileChooser.ExtensionFilter("Python Files", "*.py"),
+                new FileChooser.ExtensionFilter("HTML Files", "*.html"),
+                new FileChooser.ExtensionFilter("All Files", "*.*")
+        );
+
+        String currentPath = tabFilePathMap.get(tab);
+        File initialDirectory = resolveInitialSaveDirectory(currentPath);
+        if (initialDirectory != null) {
+            fileChooser.setInitialDirectory(initialDirectory);
+        }
+
+        String currentFileName = buildSaveAsFileName(tab);
+        if (currentFileName != null && !currentFileName.isBlank()) {
+            fileChooser.setInitialFileName(currentFileName);
+        }
+
+        File file = fileChooser.showSaveDialog(tabPane.getScene().getWindow());
+        if (file == null) {
+            return null;
+        }
+
+        String fileName = ensureSupportedExtension(file.getName(), fileChooser.getSelectedExtensionFilter());
+        File targetFile = fileName.equals(file.getName())
+                ? file
+                : new File(file.getParentFile(), fileName);
+
+        tab.setText(formatTabTitleForFileName(targetFile.getName()));
+        tabFilePathMap.put(tab, targetFile.getAbsolutePath());
+        return targetFile;
+    }
+
+    private File resolveInitialSaveDirectory(String currentPath) {
+        if (currentPath != null && !currentPath.isBlank()) {
+            File currentFile = new File(currentPath);
+            File parent = currentFile.getParentFile();
+            if (parent != null && parent.exists()) {
+                return parent;
+            }
+        }
+
+        File userNotesDir = new File(getUserNotesDir());
+        if (userNotesDir.exists()) {
+            return userNotesDir;
+        }
+
+        File notesDir = new File("notes");
+        return notesDir.exists() ? notesDir : null;
+    }
+
+    private String buildSaveAsFileName(Tab tab) {
+        String currentPath = tabFilePathMap.get(tab);
+        if (currentPath != null && !currentPath.isBlank()) {
+            return new File(currentPath).getName();
+        }
+
+        String tabTitle = tab.getText().replace("*", "").trim();
+        if (tabTitle.isEmpty()) {
+            return "Untitled.txt";
+        }
+
+        if (tabTitle.contains(".") || tabTitle.startsWith(".")) {
+            return tabTitle;
+        }
+
+        return tabTitle + ".txt";
+    }
+
+    private String ensureSupportedExtension(String fileName, FileChooser.ExtensionFilter selectedFilter) {
+        if (fileName == null || fileName.isBlank()) {
+            return "Untitled.txt";
+        }
+
+        if (fileName.contains(".")) {
+            return fileName;
+        }
+
+        if (selectedFilter == null) {
+            return fileName + ".txt";
+        }
+
+        List<String> patterns = selectedFilter.getExtensions();
+        if (patterns == null || patterns.isEmpty()) {
+            return fileName + ".txt";
+        }
+
+        String pattern = patterns.get(0);
+        if ("*.*".equals(pattern)) {
+            return fileName;
+        }
+
+        String extension = pattern.replace("*", "").trim();
+        if (extension.isEmpty()) {
+            return fileName;
+        }
+
+        if (!extension.startsWith(".")) {
+            extension = "." + extension;
+        }
+
+        return SAVEABLE_EXTENSIONS.contains(extension.toLowerCase()) ? fileName + extension : fileName;
+    }
+
+    private void syncManagedNoteCopy(Tab tab, File savedFile, RichTextEditor editor) throws IOException {
+        if (savedFile == null || editor == null) {
+            return;
+        }
+
+        File managedFile;
+        if (isManagedNotesFile(savedFile)) {
+            managedFile = savedFile;
+        } else {
+            managedFile = resolveManagedNoteTarget(tab, savedFile.getName());
+            writeEditorToFile(editor, managedFile);
+        }
+
+        String previousManagedPath = tabManagedNotePathMap.get(tab);
+        if (previousManagedPath != null && !previousManagedPath.isBlank()) {
+            File previousManagedFile = new File(previousManagedPath);
+            if (!previousManagedFile.getAbsolutePath().equals(managedFile.getAbsolutePath())
+                    && previousManagedFile.exists()
+                    && isManagedNotesFile(previousManagedFile)) {
+                Files.deleteIfExists(previousManagedFile.toPath());
+            }
+        }
+
+        tabManagedNotePathMap.put(tab, managedFile.getAbsolutePath());
+    }
+
+    private File resolveManagedNoteTarget(Tab tab, String fileName) {
+        File notesDir = new File(getUserNotesDir());
+        if (!notesDir.exists()) {
+            notesDir.mkdirs();
+        }
+
+        String sanitizedFileName = sanitizeFileName(fileName);
+        if (sanitizedFileName.isBlank()) {
+            sanitizedFileName = "Untitled.txt";
+        }
+
+        String previousManagedPath = tabManagedNotePathMap.get(tab);
+        if (previousManagedPath != null) {
+            File previousManagedFile = new File(previousManagedPath);
+            if (isManagedNotesFile(previousManagedFile)) {
+                return previousManagedFile;
+            }
+        }
+
+        File candidate = new File(notesDir, sanitizedFileName);
+        if (!candidate.exists()) {
+            return candidate;
+        }
+
+        String baseName = removeExtension(sanitizedFileName);
+        String extension = extensionOf(sanitizedFileName);
+        int suffix = 2;
+        while (candidate.exists()) {
+            candidate = new File(notesDir, baseName + "-" + suffix + extension);
+            suffix++;
+        }
+        return candidate;
+    }
+
+    private boolean isManagedNotesFile(File file) {
+        if (file == null) {
+            return false;
+        }
+
+        try {
+            Path managedDir = Path.of(getUserNotesDir()).toAbsolutePath().normalize();
+            Path target = file.toPath().toAbsolutePath().normalize();
+            return target.startsWith(managedDir);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private String extensionOf(String fileName) {
+        if (fileName == null) {
+            return "";
+        }
+        int dotIndex = fileName.lastIndexOf('.');
+        if (dotIndex <= 0 || dotIndex == fileName.length() - 1) {
+            return "";
+        }
+        return fileName.substring(dotIndex);
+    }
+
+    private String removeExtension(String fileName) {
+        if (fileName == null) {
+            return "";
+        }
+        int dotIndex = fileName.lastIndexOf('.');
+        if (dotIndex <= 0) {
+            return fileName;
+        }
+        return fileName.substring(0, dotIndex);
     }
 
     @FXML private void handleRenameFile(ActionEvent event) {
