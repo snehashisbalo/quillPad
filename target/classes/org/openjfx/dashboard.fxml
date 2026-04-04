@@ -193,16 +193,8 @@
                                 <Insets left="10"/>
                             </HBox.margin>
                         </Button>
-                        <Button fx:id="syncButton"
-                                text="⬆ Upload All"
-                                styleClass="icon-button"
-                                onAction="#handleSync">
-                            <HBox.margin>
-                                <Insets left="8"/>
-                            </HBox.margin>
-                        </Button>
                         <Button fx:id="uploadButton"
-                                text="⬆ Upload Selected"
+                                text="⬆ Upload"
                                 styleClass="icon-button"
                                 onAction="#handleUploadSelected">
                             <HBox.margin>
@@ -210,9 +202,17 @@
                             </HBox.margin>
                         </Button>
                         <Button fx:id="remoteButton"
-                                text="⬇ Download Remote"
+                                text="⬇ Download"
                                 styleClass="icon-button"
                                 onAction="#handleRemoteBrowse">
+                            <HBox.margin>
+                                <Insets left="8"/>
+                            </HBox.margin>
+                        </Button>
+                        <Button fx:id="myUploadsButton"
+                                text="☁ My Uploads"
+                                styleClass="icon-button"
+                                onAction="#handleMyUploads">
                             <HBox.margin>
                                 <Insets left="8"/>
                             </HBox.margin>

@@ -22,6 +22,7 @@ public class SettingsManager {
     private static final String DEFAULT_NETWORK_API_KEY = "";
     private static final String DEFAULT_NETWORK_TIMEOUT_SECONDS = "8";
     private static final String DEFAULT_NETWORK_NAMESPACE = "shared";
+    private static final String DEFAULT_REMOTE_AUTOSAVE_SECONDS = "30";
     private static final String DEFAULT_STARRED_NOTES = "";
     
     static {
@@ -59,6 +60,7 @@ public class SettingsManager {
         settings.setProperty("network.api_key", DEFAULT_NETWORK_API_KEY);
         settings.setProperty("network.timeout_seconds", DEFAULT_NETWORK_TIMEOUT_SECONDS);
         settings.setProperty("network.namespace", DEFAULT_NETWORK_NAMESPACE);
+        settings.setProperty("network.remote_autosave_seconds", DEFAULT_REMOTE_AUTOSAVE_SECONDS);
         settings.setProperty("starred.notes", DEFAULT_STARRED_NOTES);
         saveSettings();
     }
@@ -166,6 +168,20 @@ public class SettingsManager {
         } else {
             settings.setProperty("network.namespace", namespace.trim());
         }
+        saveSettings();
+    }
+
+    public static int getRemoteAutoSaveSeconds() {
+        try {
+            return Integer.parseInt(settings.getProperty("network.remote_autosave_seconds", DEFAULT_REMOTE_AUTOSAVE_SECONDS));
+        } catch (NumberFormatException e) {
+            return Integer.parseInt(DEFAULT_REMOTE_AUTOSAVE_SECONDS);
+        }
+    }
+
+    public static void setRemoteAutoSaveSeconds(int seconds) {
+        int safeSeconds = Math.max(5, Math.min(seconds, 3600));
+        settings.setProperty("network.remote_autosave_seconds", String.valueOf(safeSeconds));
         saveSettings();
     }
 

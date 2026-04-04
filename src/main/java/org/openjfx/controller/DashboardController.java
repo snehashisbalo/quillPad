@@ -18,6 +18,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import org.openjfx.QuillPad;
+import org.openjfx.RemoteNoteRegistry;
 import org.openjfx.SettingsManager;
 import org.openjfx.ThemeManager;
 import org.openjfx.network.NetworkSyncService;
@@ -64,13 +65,13 @@ public class DashboardController implements Initializable {
     private Button refreshButton;
 
     @FXML
-    private Button syncButton;
-
-    @FXML
     private Button uploadButton;
 
     @FXML
     private Button remoteButton;
+
+    @FXML
+    private Button myUploadsButton;
 
     @FXML
     private Button themeToggleButton;
@@ -334,38 +335,6 @@ public class DashboardController implements Initializable {
     }
 
     @FXML
-    private void handleSync(ActionEvent event) {
-        if (!validateRemoteFeaturePrerequisites()) {
-            return;
-        }
-
-        if (syncButton != null) {
-            syncButton.setDisable(true);
-        }
-
-        NetworkSyncService.syncAllNotesAsync(remoteNamespace(), currentUser, notesDir)
-            .whenComplete((summary, throwable) -> Platform.runLater(() -> {
-                if (syncButton != null) {
-                    syncButton.setDisable(false);
-                }
-                if (throwable != null) {
-                    showError("Upload failed: " + throwable.getMessage());
-                    return;
-                }
-                StringBuilder message = new StringBuilder("Upload all complete.\nAttempted: " + summary.attempted()
-                    + "\nSucceeded: " + summary.success()
-                    + "\nFailed: " + summary.failed());
-                if (summary.failed() > 0 && summary.errorSamples() != null && !summary.errorSamples().isEmpty()) {
-                    message.append("\n\nSample errors:");
-                    for (String error : summary.errorSamples()) {
-                        message.append("\n- ").append(error);
-                    }
-                }
-                showInfo(message.toString());
-            }));
-    }
-
-    @FXML
     private void handleRemoteBrowse(ActionEvent event) {
         if (!validateRemoteFeaturePrerequisites()) {
             return;
@@ -385,6 +354,33 @@ public class DashboardController implements Initializable {
                     return;
                 }
                 showRemoteNotesDialog(notes == null ? List.of() : notes);
+            }));
+    }
+
+    @FXML
+    private void handleMyUploads(ActionEvent event) {
+        if (!validateRemoteFeaturePrerequisites()) {
+            return;
+        }
+
+        if (myUploadsButton != null) {
+            myUploadsButton.setDisable(true);
+        }
+
+        NetworkSyncService.listRemoteNotesDetailedAsync(remoteNamespace())
+            .whenComplete((notes, throwable) -> Platform.runLater(() -> {
+                if (myUploadsButton != null) {
+                    myUploadsButton.setDisable(false);
+                }
+                if (throwable != null) {
+                    showError("Failed to fetch your uploaded notes: " + throwable.getMessage());
+                    return;
+                }
+                List<NetworkSyncService.RemoteNoteRef> uploadedNotes = (notes == null ? List.<NetworkSyncService.RemoteNoteRef>of() : notes)
+                    .stream()
+                    .filter(note -> currentUser != null && currentUser.equals(note.author()))
+                    .toList();
+                showMyUploadsDialog(uploadedNotes);
             }));
     }
 
@@ -451,6 +447,9 @@ public class DashboardController implements Initializable {
                         message.append("\n- ").append(error);
                     }
                 }
+                if (summary.success() > 0) {
+                    registerSelectedNotesAsRemote(selected, currentUser);
+                }
                 showInfo(message.toString());
             }));
     }
@@ -475,6 +474,7 @@ public class DashboardController implements Initializable {
         try {
             clearDirectoryContents(notesDir.toPath());
             Files.createDirectories(trashDir.toPath());
+            RemoteNoteRegistry.clear(notesDir.toPath());
         } catch (IOException ex) {
             showError("Failed to reset storage: " + ex.getMessage());
             return;
@@ -591,17 +591,107 @@ public class DashboardController implements Initializable {
         dialog.showAndWait();
     }
 
+    private void showMyUploadsDialog(List<NetworkSyncService.RemoteNoteRef> remoteNotes) {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("My Uploaded Notes");
+        dialog.setHeaderText("Notes you uploaded to the server");
+        dialog.getDialogPane().setPrefSize(700, 480);
+
+        ObservableList<NetworkSyncService.RemoteNoteRef> notesModel = FXCollections.observableArrayList(remoteNotes);
+        ListView<NetworkSyncService.RemoteNoteRef> listView = new ListView<>(notesModel);
+        listView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        listView.setPrefSize(660, 360);
+        listView.setCellFactory(v -> new ListCell<>() {
+            @Override
+            protected void updateItem(NetworkSyncService.RemoteNoteRef item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.noteName());
+            }
+        });
+
+        Label hint = new Label("Select one or more uploaded notes to delete them from the server.");
+        VBox content = new VBox(10, hint, listView);
+        content.setPadding(new Insets(8, 4, 4, 4));
+        dialog.getDialogPane().setContent(content);
+
+        ButtonType deleteButtonType = new ButtonType("Delete Selected", ButtonBar.ButtonData.OK_DONE);
+        ButtonType refreshButtonType = new ButtonType("Refresh");
+        dialog.getDialogPane().getButtonTypes().addAll(deleteButtonType, refreshButtonType, ButtonType.CLOSE);
+
+        Button deleteButton = (Button) dialog.getDialogPane().lookupButton(deleteButtonType);
+        Button refreshButton = (Button) dialog.getDialogPane().lookupButton(refreshButtonType);
+        BooleanProperty deleteInProgress = new SimpleBooleanProperty(false);
+        deleteButton.disableProperty().bind(
+            Bindings.or(listView.getSelectionModel().selectedItemProperty().isNull(), deleteInProgress)
+        );
+
+        refreshButton.addEventFilter(ActionEvent.ACTION, e -> {
+            e.consume();
+            refreshButton.setDisable(true);
+            NetworkSyncService.listRemoteNotesDetailedAsync(remoteNamespace())
+                .whenComplete((notes, throwable) -> Platform.runLater(() -> {
+                    refreshButton.setDisable(false);
+                    if (throwable != null) {
+                        showError("Refresh failed: " + throwable.getMessage());
+                        return;
+                    }
+                    notesModel.setAll((notes == null ? List.<NetworkSyncService.RemoteNoteRef>of() : notes)
+                        .stream()
+                        .filter(note -> currentUser != null && currentUser.equals(note.author()))
+                        .toList());
+                }));
+        });
+
+        deleteButton.addEventFilter(ActionEvent.ACTION, e -> {
+            e.consume();
+            List<NetworkSyncService.RemoteNoteRef> selected = new ArrayList<>(listView.getSelectionModel().getSelectedItems());
+            if (selected.isEmpty()) {
+                return;
+            }
+
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.setTitle("Delete Uploaded Notes");
+            confirm.setHeaderText("Delete " + selected.size() + " selected server note" + (selected.size() == 1 ? "" : "s") + "?");
+            confirm.setContentText("This removes them from the server.");
+            Optional<ButtonType> result = confirm.showAndWait();
+            if (result.isEmpty() || result.get() != ButtonType.OK) {
+                return;
+            }
+
+            deleteInProgress.set(true);
+            deleteRemoteNotes(selected)
+                .whenComplete((summary, throwable) -> Platform.runLater(() -> {
+                    deleteInProgress.set(false);
+                    if (throwable != null) {
+                        showError("Delete failed: " + throwable.getMessage());
+                        return;
+                    }
+                    if (!summary.deletedRefs().isEmpty()) {
+                        notesModel.removeAll(summary.deletedRefs());
+                    }
+                    StringBuilder message = new StringBuilder("Remote delete complete.\nSelected: " + summary.attempted()
+                        + "\nSucceeded: " + summary.success()
+                        + "\nFailed: " + summary.failed());
+                    if (summary.failed() > 0 && !summary.errors().isEmpty()) {
+                        message.append("\n\nSample errors:");
+                        for (String error : summary.errors()) {
+                            message.append("\n- ").append(error);
+                        }
+                    }
+                    showInfo(message.toString());
+                }));
+        });
+
+        dialog.showAndWait();
+    }
+
     private File resolveLocalTarget(String noteName, String author) {
         String safeName = sanitizeName(noteName);
         String safeAuthor = sanitizeName(author == null || author.isBlank() ? "unknown" : author);
         String ext = extensionOf(safeName);
         String base = removeExtension(safeName);
         String suffixExt = ext.isEmpty() ? ".txt" : ext;
-        File target = new File(notesDir, base + "-by-" + safeAuthor + suffixExt);
-        if (!target.exists()) {
-            return target;
-        }
-        return new File(notesDir, base + "-by-" + safeAuthor + "-remote-" + System.currentTimeMillis() + suffixExt);
+        return nextDuplicateFile(notesDir, base + "-by-" + safeAuthor + suffixExt);
     }
 
     private List<String> listLocalNotesForUpload() {
@@ -643,6 +733,7 @@ public class DashboardController implements Initializable {
                     }
                     File target = resolveLocalTarget(note.noteName(), author);
                     Files.writeString(target.toPath(), note.content());
+                    RemoteNoteRegistry.put(notesDir.toPath(), target.getName(), note.noteName(), author);
                     success++;
                     if (savedFiles.size() < 5) {
                         savedFiles.add(toDisplayNoteName(target.getName()));
@@ -662,6 +753,50 @@ public class DashboardController implements Initializable {
     }
 
     private record DownloadSummary(int attempted, int success, int failed, List<String> errors, List<String> savedFiles) {
+    }
+
+    private CompletableFuture<DeleteSummary> deleteRemoteNotes(List<NetworkSyncService.RemoteNoteRef> noteRefs) {
+        if (noteRefs == null || noteRefs.isEmpty()) {
+            return CompletableFuture.completedFuture(new DeleteSummary(0, 0, 0, List.of(), List.of()));
+        }
+        return CompletableFuture.supplyAsync(() -> {
+            int attempted = noteRefs.size();
+            int success = 0;
+            int failed = 0;
+            List<String> errors = new ArrayList<>();
+            List<NetworkSyncService.RemoteNoteRef> deletedRefs = new ArrayList<>();
+
+            for (NetworkSyncService.RemoteNoteRef ref : noteRefs) {
+                try {
+                    NetworkSyncService.DeleteResult result =
+                        NetworkSyncService.deleteNoteDetailedAsync(remoteNamespace(), ref.noteName()).join();
+                    if (result.success()) {
+                        success++;
+                        deletedRefs.add(ref);
+                        RemoteNoteRegistry.removeByRemote(notesDir.toPath(), ref.noteName(), ref.author());
+                    } else {
+                        failed++;
+                        if (errors.size() < 3) {
+                            errors.add(ref.noteName() + ": " + result.message());
+                        }
+                    }
+                } catch (Exception e) {
+                    failed++;
+                    if (errors.size() < 3) {
+                        String message = (e.getMessage() == null || e.getMessage().isBlank())
+                            ? e.getClass().getSimpleName()
+                            : e.getMessage();
+                        errors.add(ref.noteName() + ": " + message);
+                    }
+                }
+            }
+
+            return new DeleteSummary(attempted, success, failed, errors, deletedRefs);
+        });
+    }
+
+    private record DeleteSummary(int attempted, int success, int failed, List<String> errors,
+                                 List<NetworkSyncService.RemoteNoteRef> deletedRefs) {
     }
 
     private String sanitizeName(String raw) {
@@ -844,6 +979,12 @@ public class DashboardController implements Initializable {
         grid.add(apiKeyLabel, 0, 6);
         grid.add(apiKeyField, 1, 6);
 
+        Label remoteAutoSaveLabel = new Label("Remote Autosave (sec):");
+        Spinner<Integer> remoteAutoSaveSpinner = new Spinner<>(5, 3600, SettingsManager.getRemoteAutoSaveSeconds());
+        remoteAutoSaveSpinner.setEditable(true);
+        grid.add(remoteAutoSaveLabel, 0, 7);
+        grid.add(remoteAutoSaveSpinner, 1, 7);
+
         dialog.getDialogPane().setContent(grid);
 
         Optional<ButtonType> result = dialog.showAndWait();
@@ -868,6 +1009,7 @@ public class DashboardController implements Initializable {
             SettingsManager.setNetworkBaseUrl(networkUrlField.getText());
             SettingsManager.setNetworkNamespace(namespaceField.getText());
             SettingsManager.setNetworkApiKey(apiKeyField.getText());
+            SettingsManager.setRemoteAutoSaveSeconds(remoteAutoSaveSpinner.getValue());
 
             showInfo("Settings saved successfully!\nChanges will apply to new tabs.");
         }
@@ -1008,14 +1150,14 @@ public class DashboardController implements Initializable {
         }
 
         String targetName = sanitizeName(name) + ext;
-        File target = new File(notesDir, targetName);
-        if (target.exists() && !target.equals(source)) {
-            showError("A file with this name already exists.");
-            return;
-        }
+        File requestedTarget = new File(notesDir, targetName);
+        File target = requestedTarget.equals(source)
+                ? requestedTarget
+                : nextDuplicateFile(notesDir, targetName);
 
         try {
             Files.move(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            RemoteNoteRegistry.rename(notesDir.toPath(), source.getName(), target.getName());
 
             String oldDisplay = toDisplayNoteName(source.getName());
             String newDisplay = toDisplayNoteName(target.getName());
@@ -1039,13 +1181,11 @@ public class DashboardController implements Initializable {
         }
         File target = new File(trashDir, source.getName());
         if (target.exists()) {
-            String base = removeExtension(source.getName());
-            String ext = extensionOf(source.getName());
-            String timestampedName = base + "-" + System.currentTimeMillis() + ext;
-            target = new File(trashDir, timestampedName);
+            target = nextDuplicateFile(trashDir, source.getName());
         }
         try {
             Files.move(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            RemoteNoteRegistry.remove(notesDir.toPath(), source.getName());
             return true;
         } catch (IOException e) {
             return false;
@@ -1060,9 +1200,7 @@ public class DashboardController implements Initializable {
         }
         File target = new File(notesDir, source.getName());
         if (target.exists()) {
-            String base = removeExtension(source.getName());
-            String ext = extensionOf(source.getName());
-            target = new File(notesDir, base + "-restored-" + System.currentTimeMillis() + ext);
+            target = nextDuplicateFile(notesDir, source.getName());
         }
         try {
             Files.move(source.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
@@ -1113,6 +1251,52 @@ public class DashboardController implements Initializable {
             return filename.substring(lastDot);
         }
         return "";
+    }
+
+    private void registerSelectedNotesAsRemote(List<String> selected, String author) {
+        if (selected == null || selected.isEmpty()) {
+            return;
+        }
+        for (String noteName : selected) {
+            File source = resolveNoteFile(notesDir, noteName);
+            if (source == null || !source.exists()) {
+                continue;
+            }
+            RemoteNoteRegistry.put(notesDir.toPath(), source.getName(), toRemoteNoteName(source.getName()), author);
+        }
+    }
+
+    private void registerAllLocalNotesAsRemote() {
+        File[] files = notesDir.listFiles((dir, name) -> !name.startsWith(".") && new File(dir, name).isFile());
+        if (files == null) {
+            return;
+        }
+        for (File file : files) {
+            RemoteNoteRegistry.put(notesDir.toPath(), file.getName(), toRemoteNoteName(file.getName()), currentUser);
+        }
+    }
+
+    private String toRemoteNoteName(String fileName) {
+        if (fileName == null) {
+            return "";
+        }
+        return fileName.toLowerCase().endsWith(".txt") ? removeExtension(fileName) : fileName;
+    }
+
+    private File nextDuplicateFile(File directory, String fileName) {
+        File candidate = new File(directory, fileName);
+        if (!candidate.exists()) {
+            return candidate;
+        }
+
+        String baseName = removeExtension(fileName);
+        String extension = extensionOf(fileName);
+        int suffix = 2;
+        while (candidate.exists()) {
+            candidate = new File(directory, baseName + " (" + suffix + ")" + extension);
+            suffix++;
+        }
+        return candidate;
     }
 
     private void updateViewUI() {

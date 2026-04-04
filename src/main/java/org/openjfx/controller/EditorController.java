@@ -19,9 +19,11 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import org.openjfx.QuillPad;
+import org.openjfx.RemoteNoteRegistry;
 import org.openjfx.SettingsManager;
 import org.openjfx.ThemeManager;
 import org.openjfx.component.RichTextEditor;
+import org.openjfx.network.NetworkSyncService;
 
 import java.io.*;
 import java.net.URL;
@@ -78,7 +80,10 @@ public class EditorController implements Initializable {
     private Map<Tab, Boolean> tabModifiedMap = new HashMap<>();
     private Map<Tab, String> tabFilePathMap = new HashMap<>();
     private Map<Tab, String> tabManagedNotePathMap = new HashMap<>();
+    private Map<Tab, Boolean> tabPendingRemoteSyncMap = new HashMap<>();
+    private Map<Tab, RemoteNoteRegistry.RemoteBinding> tabRemoteBindingMap = new HashMap<>();
     private Timer autoSaveTimer;
+    private Timer remoteAutoSaveTimer;
     private int untitledCounter = 1;
 
     private static final String[] FONT_FAMILIES = {
@@ -131,6 +136,7 @@ public class EditorController implements Initializable {
         });
 
         startAutoSave();
+        startRemoteAutoSave();
 
         tabPane.getTabs().addListener((javafx.collections.ListChangeListener.Change<? extends Tab> c) -> {
             while (c.next()) {
@@ -140,10 +146,13 @@ public class EditorController implements Initializable {
                         tabModifiedMap.remove(removedTab);
                         tabFilePathMap.remove(removedTab);
                         tabManagedNotePathMap.remove(removedTab);
+                        tabPendingRemoteSyncMap.remove(removedTab);
+                        tabRemoteBindingMap.remove(removedTab);
                     }
                 }
             }
             if (tabPane.getTabs().isEmpty() && mainApp != null) {
+                stopBackgroundTimers();
                 mainApp.showDashboard(currentUser);
             }
         });
@@ -317,6 +326,7 @@ public class EditorController implements Initializable {
 
         editor.getTextArea().textProperty().addListener((obs, oldText, newText) -> {
             markTabModified(tab, true);
+            tabPendingRemoteSyncMap.put(tab, true);
             updateStatus(editor, editor.getCaretPosition());
         });
 
@@ -435,6 +445,8 @@ public class EditorController implements Initializable {
                 editor.setLanguageFromFileName(file.getName());
                 tabFilePathMap.put(currentTab, file.getAbsolutePath());
                 tabManagedNotePathMap.put(currentTab, file.getAbsolutePath());
+                loadRemoteBinding(currentTab, file);
+                tabPendingRemoteSyncMap.put(currentTab, false);
                 markTabModified(currentTab, false);
                 fileStatusLabel.setText("Loaded");
             } catch (IOException | ClassNotFoundException e) {
@@ -549,6 +561,55 @@ public class EditorController implements Initializable {
         }, 30000, 30000);
     }
 
+    private void startRemoteAutoSave() {
+        int intervalSeconds = SettingsManager.getRemoteAutoSaveSeconds();
+        remoteAutoSaveTimer = new Timer(true);
+        remoteAutoSaveTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                Platform.runLater(() -> {
+                    for (Tab tab : tabPane.getTabs()) {
+                        if (!tabPendingRemoteSyncMap.getOrDefault(tab, false)) {
+                            continue;
+                        }
+                        RemoteNoteRegistry.RemoteBinding binding = resolveRemoteBinding(tab);
+                        if (binding == null) {
+                            continue;
+                        }
+                        RichTextEditor editor = tabEditorMap.get(tab);
+                        if (editor == null) {
+                            continue;
+                        }
+                        NetworkSyncService.syncRemoteNoteAsync(
+                                SettingsManager.getNetworkNamespace(),
+                                binding.author(),
+                                binding.remoteName(),
+                                serializeEditorContent(editor)
+                        ).whenComplete((success, throwable) -> Platform.runLater(() -> {
+                            if (Boolean.TRUE.equals(success) && throwable == null) {
+                                tabPendingRemoteSyncMap.put(tab, false);
+                                if (tab.equals(tabPane.getSelectionModel().getSelectedItem())) {
+                                    fileStatusLabel.setText("Remote autosaved");
+                                }
+                            }
+                        }));
+                    }
+                });
+            }
+        }, intervalSeconds * 1000L, intervalSeconds * 1000L);
+    }
+
+    private void stopBackgroundTimers() {
+        if (autoSaveTimer != null) {
+            autoSaveTimer.cancel();
+            autoSaveTimer = null;
+        }
+        if (remoteAutoSaveTimer != null) {
+            remoteAutoSaveTimer.cancel();
+            remoteAutoSaveTimer = null;
+        }
+    }
+
     @FXML private void handleNew(ActionEvent event) {
         createNewTab(null);
     }
@@ -583,7 +644,9 @@ public class EditorController implements Initializable {
             tabFilePathMap.put(currentTab, file.getAbsolutePath());
             if (isManagedNotesFile(file)) {
                 tabManagedNotePathMap.put(currentTab, file.getAbsolutePath());
+                loadRemoteBinding(currentTab, file);
             }
+            tabPendingRemoteSyncMap.put(currentTab, false);
             markTabModified(currentTab, false);
         } catch (IOException | ClassNotFoundException e) {
             showError("Failed to open file: " + e.getMessage());
@@ -679,6 +742,9 @@ public class EditorController implements Initializable {
 
         tab.setText(formatTabTitleForFileName(targetFile.getName()));
         tabFilePathMap.put(tab, targetFile.getAbsolutePath());
+        if (!isManagedNotesFile(targetFile)) {
+            tabRemoteBindingMap.remove(tab);
+        }
         return targetFile;
     }
 
@@ -772,11 +838,16 @@ public class EditorController implements Initializable {
             if (!previousManagedFile.getAbsolutePath().equals(managedFile.getAbsolutePath())
                     && previousManagedFile.exists()
                     && isManagedNotesFile(previousManagedFile)) {
+                RemoteNoteRegistry.remove(Path.of(getUserNotesDir()), previousManagedFile.getName());
                 Files.deleteIfExists(previousManagedFile.toPath());
             }
         }
 
         tabManagedNotePathMap.put(tab, managedFile.getAbsolutePath());
+        RemoteNoteRegistry.RemoteBinding binding = tabRemoteBindingMap.get(tab);
+        if (binding != null) {
+            RemoteNoteRegistry.put(Path.of(getUserNotesDir()), managedFile.getName(), binding.remoteName(), binding.author());
+        }
     }
 
     private File resolveManagedNoteTarget(Tab tab, String fileName) {
@@ -803,14 +874,7 @@ public class EditorController implements Initializable {
             return candidate;
         }
 
-        String baseName = removeExtension(sanitizedFileName);
-        String extension = extensionOf(sanitizedFileName);
-        int suffix = 2;
-        while (candidate.exists()) {
-            candidate = new File(notesDir, baseName + "-" + suffix + extension);
-            suffix++;
-        }
-        return candidate;
+        return nextDuplicateFile(notesDir, sanitizedFileName);
     }
 
     private boolean isManagedNotesFile(File file) {
@@ -824,6 +888,44 @@ public class EditorController implements Initializable {
             return target.startsWith(managedDir);
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    private void loadRemoteBinding(Tab tab, File managedFile) {
+        if (tab == null || managedFile == null || !isManagedNotesFile(managedFile)) {
+            return;
+        }
+        RemoteNoteRegistry.get(Path.of(getUserNotesDir()), managedFile.getName())
+                .ifPresent(binding -> tabRemoteBindingMap.put(tab, binding));
+    }
+
+    private RemoteNoteRegistry.RemoteBinding resolveRemoteBinding(Tab tab) {
+        if (tab == null) {
+            return null;
+        }
+        RemoteNoteRegistry.RemoteBinding existing = tabRemoteBindingMap.get(tab);
+        if (existing != null) {
+            return existing;
+        }
+        String managedPath = tabManagedNotePathMap.get(tab);
+        if (managedPath == null || managedPath.isBlank()) {
+            return null;
+        }
+        File managedFile = new File(managedPath);
+        if (!managedFile.exists() || !isManagedNotesFile(managedFile)) {
+            return null;
+        }
+        Optional<RemoteNoteRegistry.RemoteBinding> binding =
+                RemoteNoteRegistry.get(Path.of(getUserNotesDir()), managedFile.getName());
+        binding.ifPresent(value -> tabRemoteBindingMap.put(tab, value));
+        return binding.orElse(null);
+    }
+
+    private String serializeEditorContent(RichTextEditor editor) {
+        try {
+            return STYLED_DOC_HEADER + System.lineSeparator() + encodeDocument(editor.toDocument());
+        } catch (IOException e) {
+            return editor.getText();
         }
     }
 
@@ -847,6 +949,18 @@ public class EditorController implements Initializable {
             return fileName;
         }
         return fileName.substring(0, dotIndex);
+    }
+
+    private File nextDuplicateFile(File directory, String fileName) {
+        String baseName = removeExtension(fileName);
+        String extension = extensionOf(fileName);
+        int suffix = 2;
+        File candidate = new File(directory, fileName);
+        while (candidate.exists()) {
+            candidate = new File(directory, baseName + " (" + suffix + ")" + extension);
+            suffix++;
+        }
+        return candidate;
     }
 
     @FXML private void handleRenameFile(ActionEvent event) {
@@ -924,6 +1038,10 @@ public class EditorController implements Initializable {
                 Files.createDirectories(newPath.getParent());
                 Files.move(oldPath, newPath, StandardCopyOption.REPLACE_EXISTING);
                 tabFilePathMap.put(selectedTab, newPath.toString());
+                if (isManagedNotesFile(oldPath.toFile())) {
+                    tabManagedNotePathMap.put(selectedTab, newPath.toString());
+                    RemoteNoteRegistry.rename(Path.of(getUserNotesDir()), oldPath.getFileName().toString(), newPath.getFileName().toString());
+                }
             } catch (IOException e) {
                 showError("Failed to rename file: " + e.getMessage());
                 return;
@@ -988,16 +1106,19 @@ public class EditorController implements Initializable {
                         }
                     }
                     if (mainApp != null) {
+                        stopBackgroundTimers();
                         mainApp.showDashboard(currentUser);
                     }
                 } else if (result.get() == discardButton) {
                     if (mainApp != null) {
+                        stopBackgroundTimers();
                         mainApp.showDashboard(currentUser);
                     }
                 }
             }
         } else {
             if (mainApp != null) {
+                stopBackgroundTimers();
                 mainApp.showDashboard(currentUser);
             }
         }

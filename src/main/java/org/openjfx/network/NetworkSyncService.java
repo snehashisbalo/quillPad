@@ -37,11 +37,25 @@ public final class NetworkSyncService {
         return CompletableFuture.supplyAsync(() -> sendNote(username, username, noteName, content));
     }
 
+    public static CompletableFuture<Boolean> syncRemoteNoteAsync(String username, String author, String noteName, String content) {
+        if (!isConfigured()) {
+            return CompletableFuture.completedFuture(false);
+        }
+        return CompletableFuture.supplyAsync(() -> sendNote(username, author, noteName, content));
+    }
+
     public static CompletableFuture<Boolean> deleteNoteAsync(String username, String noteName) {
         if (!isConfigured()) {
             return CompletableFuture.completedFuture(false);
         }
         return CompletableFuture.supplyAsync(() -> deleteRemoteNote(username, noteName));
+    }
+
+    public static CompletableFuture<DeleteResult> deleteNoteDetailedAsync(String username, String noteName) {
+        if (!isConfigured()) {
+            return CompletableFuture.completedFuture(new DeleteResult(false, "Network sync is disabled"));
+        }
+        return CompletableFuture.supplyAsync(() -> deleteRemoteNoteDetailed(username, noteName));
     }
 
     public static CompletableFuture<Integer> deleteRemoteByAuthorAsync(String username, String author) {
@@ -223,11 +237,18 @@ public final class NetworkSyncService {
     }
 
     private static boolean deleteRemoteNote(String username, String noteName) {
+        return deleteRemoteNoteDetailed(username, noteName).success();
+    }
+
+    private static DeleteResult deleteRemoteNoteDetailed(String username, String noteName) {
         try {
             HttpResponse<String> response = createClient().send(buildDeleteRequest(username, noteName), HttpResponse.BodyHandlers.ofString());
-            return response.statusCode() >= 200 && response.statusCode() < 300;
+            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                return new DeleteResult(true, "OK");
+            }
+            return new DeleteResult(false, "HTTP " + response.statusCode());
         } catch (Exception e) {
-            return false;
+            return new DeleteResult(false, e.getClass().getSimpleName() + ": " + safeMessage(e));
         }
     }
 
@@ -469,6 +490,9 @@ public final class NetworkSyncService {
     }
 
     public record SyncSummary(int attempted, int success, int failed, boolean networkConfigured, List<String> errorSamples) {
+    }
+
+    public record DeleteResult(boolean success, String message) {
     }
 
     public record RemoteNote(String noteName, String content, String author) {
