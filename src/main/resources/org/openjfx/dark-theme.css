@@ -453,12 +453,15 @@
     -fx-background-color: #3a3a3a;
     -fx-border-color: #5a5a5a;
     -fx-text-fill: #e6e6e6;
-    -fx-min-width: 64;
-    -fx-pref-width: 64;
-    -fx-max-width: 64;
-    -fx-min-height: 30;
-    -fx-pref-height: 30;
-    -fx-max-height: 30;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
+    -fx-min-width: 38;
+    -fx-pref-width: 38;
+    -fx-max-width: 38;
+    -fx-min-height: 38;
+    -fx-pref-height: 38;
+    -fx-max-height: 38;
+    -fx-padding: 0;
     -fx-alignment: CENTER;
 }
 /* Input Fields - Dark */

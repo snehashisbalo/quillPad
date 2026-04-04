@@ -61,6 +61,8 @@
             </MenuBar>
 
             <ToolBar fx:id="formattingToolBar" styleClass="formatting-toolbar">
+                <Region HBox.hgrow="ALWAYS"/>
+
                 <Label text="Font:" styleClass="toolbar-label"/>
                 <ComboBox fx:id="fontFamilyCombo" prefWidth="120"/>
                 
@@ -103,13 +105,13 @@
                     </tooltip>
                 </ColorPicker>
 
-                <Button fx:id="themeToggleButton" text="Theme" styleClass="theme-toggle-button editor-theme-toggle-button">
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <Button fx:id="themeToggleButton" text="☀️" styleClass="theme-toggle-button editor-theme-toggle-button">
                     <tooltip>
                         <Tooltip text="Toggle Theme"/>
                     </tooltip>
                 </Button>
-                
-                <Region HBox.hgrow="ALWAYS"/>
 
             </ToolBar>
         </VBox>

@@ -545,9 +545,9 @@
 
 .formatting-toolbar {
     -fx-alignment: CENTER_LEFT;
-    -fx-padding: 6 10;
-    -fx-min-height: 42;
-    -fx-pref-height: 42;
+    -fx-padding: 8 18;
+    -fx-min-height: 50;
+    -fx-pref-height: 50;
 }
 
 .formatting-toolbar > .container {
@@ -556,6 +556,7 @@
 
 .formatting-toolbar > .container > .box {
     -fx-alignment: CENTER_LEFT;
+    -fx-spacing: 8;
 }
 
 .formatting-toolbar .button,
@@ -574,17 +575,18 @@
 }
 
 .editor-theme-toggle-button {
-    -fx-background-radius: 4;
-    -fx-border-radius: 4;
-    -fx-min-width: 64;
-    -fx-pref-width: 64;
-    -fx-max-width: 64;
-    -fx-min-height: 30;
-    -fx-pref-height: 30;
-    -fx-max-height: 30;
-    -fx-padding: 0 10;
+    -fx-background-radius: 10;
+    -fx-border-radius: 10;
+    -fx-min-width: 38;
+    -fx-pref-width: 38;
+    -fx-max-width: 38;
+    -fx-min-height: 38;
+    -fx-pref-height: 38;
+    -fx-max-height: 38;
+    -fx-padding: 0;
     -fx-alignment: CENTER;
-    -fx-font-size: 12px;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
 }
 
 /* ===========================
@@ -774,16 +776,16 @@
     -fx-background-color: #E8F1FB;
     -fx-border-color: #4A90E2;
     -fx-border-width: 1;
-    -fx-border-radius: 4;
-    -fx-background-radius: 4;
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
     -fx-text-fill: #1F5FA9;
-    -fx-min-width: 64;
-    -fx-pref-width: 64;
-    -fx-max-width: 64;
-    -fx-min-height: 30;
-    -fx-pref-height: 30;
-    -fx-max-height: 30;
-    -fx-padding: 0 10;
+    -fx-min-width: 38;
+    -fx-pref-width: 38;
+    -fx-max-width: 38;
+    -fx-min-height: 38;
+    -fx-pref-height: 38;
+    -fx-max-height: 38;
+    -fx-padding: 0;
     -fx-alignment: CENTER;
 }
 

@@ -1405,8 +1405,12 @@ public class EditorController implements Initializable {
             return;
         }
         ThemeManager.Theme current = ThemeManager.getCurrentTheme();
-        themeToggleButton.setText("Theme");
-        themeToggleButton.setTooltip(new Tooltip("Theme: " + current.getDisplayName() + " (click to toggle)"));
+        String icon = ThemeManager.getThemeIcon(current);
+        ThemeManager.Theme next = current == ThemeManager.Theme.DARK
+            ? ThemeManager.Theme.LIGHT
+            : ThemeManager.Theme.DARK;
+        themeToggleButton.setText(icon);
+        themeToggleButton.setTooltip(new Tooltip("Theme: " + current.getDisplayName() + " (switch to " + next.getDisplayName() + ")"));
     }
 
     private void showError(String message) {
