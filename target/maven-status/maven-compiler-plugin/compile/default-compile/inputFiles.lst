@@ -5,6 +5,7 @@
 /Users/abdullahikra/Documents/QuillPadProject/src/main/java/org/openjfx/SettingsManager.java
 /Users/abdullahikra/Documents/QuillPadProject/src/main/java/org/quillpad/collab/CollabServer.java
 /Users/abdullahikra/Documents/QuillPadProject/src/main/java/org/openjfx/controller/DashboardController.java
+/Users/abdullahikra/Documents/QuillPadProject/src/main/java/org/openjfx/controller/RegisterController.java
 /Users/abdullahikra/Documents/QuillPadProject/src/main/java/org/quillpad/collab/ClientHandler.java
 /Users/abdullahikra/Documents/QuillPadProject/src/main/java/org/quillpad/collab/Message.java
 /Users/abdullahikra/Documents/QuillPadProject/src/main/java/org/openjfx/ThemeManager.java
@@ -12,5 +13,6 @@
 /Users/abdullahikra/Documents/QuillPadProject/src/main/java/org/openjfx/controller/EditorController.java
 /Users/abdullahikra/Documents/QuillPadProject/src/main/java/org/openjfx/network/NetworkSyncService.java
 /Users/abdullahikra/Documents/QuillPadProject/src/main/java/org/quillpad/collab/CollabClient.java
+/Users/abdullahikra/Documents/QuillPadProject/src/main/java/org/openjfx/auth/UserStore.java
 /Users/abdullahikra/Documents/QuillPadProject/src/main/java/org/openjfx/network/NoteSyncServer.java
 /Users/abdullahikra/Documents/QuillPadProject/src/main/java/org/quillpad/collab/ServerRunner.java

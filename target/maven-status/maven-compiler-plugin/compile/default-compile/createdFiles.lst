@@ -4,6 +4,7 @@ org/quillpad/collab/Document$StyleSegment.class
 org/openjfx/network/NetworkSyncService$SendResult.class
 org/openjfx/component/RichTextEditor$Language.class
 org/openjfx/controller/DashboardController$DownloadSummary.class
+org/openjfx/controller/RegisterController.class
 org/openjfx/controller/EditorController$4.class
 org/openjfx/controller/DashboardController.class
 org/openjfx/controller/DashboardController$3.class
@@ -28,6 +29,7 @@ org/openjfx/network/NetworkSyncService$RemoteNote.class
 org/openjfx/controller/EditorController$5.class
 org/openjfx/SettingsManager.class
 org/openjfx/RemoteNoteRegistry$RemoteBinding.class
+org/openjfx/auth/UserStore.class
 org/openjfx/network/NoteSyncServer.class
 org/quillpad/collab/CollabServer.class
 org/openjfx/network/NoteSyncServer$SyncHandler.class
@@ -36,6 +38,7 @@ org/openjfx/QuillPad.class
 org/openjfx/controller/EditorController$2.class
 org/openjfx/controller/EditorController$1.class
 org/openjfx/controller/LoginController.class
+org/openjfx/auth/UserStore$UserRecord.class
 org/openjfx/network/NetworkSyncService$DeleteResult.class
 org/openjfx/network/NoteSyncServer$DeleteByAuthorHandler.class
 org/openjfx/network/NoteSyncServer$NotesHandler.class

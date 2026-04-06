@@ -3,11 +3,11 @@ package org.openjfx;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import org.openjfx.controller.DashboardController;
 import org.openjfx.controller.EditorController;
 import org.openjfx.controller.LoginController;
+import org.openjfx.controller.RegisterController;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,6 +16,7 @@ public class QuillPad extends Application {
 
     private Stage primaryStage;
     private Scene loginScene;
+    private Scene registerScene;
     private Scene dashboardScene;
     private Scene editorScene;
     private String currentUser;
@@ -44,7 +45,7 @@ public class QuillPad extends Application {
 
     private void loadLoginScene() throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("login.fxml"));
-        loginScene = new Scene(loader.load(), 800, 520);
+        loginScene = new Scene(loader.load(), 920, 620);
         ThemeManager.registerScene(loginScene);
         LoginController controller = loader.getController();
         controller.setMainApp(this);
@@ -58,6 +59,16 @@ public class QuillPad extends Application {
             DashboardController controller = loader.getController();
             controller.setMainApp(this);
             controller.setCurrentUser(currentUser);
+        }
+    }
+
+    private void loadRegisterScene() throws IOException {
+        if (registerScene == null) {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("register.fxml"));
+            registerScene = new Scene(loader.load(), 920, 640);
+            ThemeManager.registerScene(registerScene);
+            RegisterController controller = loader.getController();
+            controller.setMainApp(this);
         }
     }
 
@@ -78,6 +89,15 @@ public class QuillPad extends Application {
     public void showLogin() {
         applyScenePreservingWindowState(loginScene);
         currentUser = null;
+    }
+
+    public void showRegister() {
+        try {
+            loadRegisterScene();
+            applyScenePreservingWindowState(registerScene);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void showDashboard(String username) {

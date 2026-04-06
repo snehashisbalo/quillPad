@@ -137,9 +137,6 @@
                                    styleClass="hint-label link-label"
                                    onMouseClicked="#handleForgotPassword"/>
                             <Region HBox.hgrow="ALWAYS"/>
-                            <Label text="Register"
-                                   styleClass="hint-label link-label"
-                                   onMouseClicked="#handleRegister"/>
                         </children>
                     </HBox>
 

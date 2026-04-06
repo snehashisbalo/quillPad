@@ -967,23 +967,11 @@ public class DashboardController implements Initializable {
         grid.add(networkUrlLabel, 0, 4);
         grid.add(networkUrlField, 1, 4);
 
-        Label namespaceLabel = new Label("Sync Namespace:");
-        TextField namespaceField = new TextField(SettingsManager.getNetworkNamespace());
-        namespaceField.setPromptText("shared");
-        grid.add(namespaceLabel, 0, 5);
-        grid.add(namespaceField, 1, 5);
-
-        Label apiKeyLabel = new Label("API Key:");
-        PasswordField apiKeyField = new PasswordField();
-        apiKeyField.setText(SettingsManager.getNetworkApiKey());
-        grid.add(apiKeyLabel, 0, 6);
-        grid.add(apiKeyField, 1, 6);
-
         Label remoteAutoSaveLabel = new Label("Remote Autosave (sec):");
         Spinner<Integer> remoteAutoSaveSpinner = new Spinner<>(5, 3600, SettingsManager.getRemoteAutoSaveSeconds());
         remoteAutoSaveSpinner.setEditable(true);
-        grid.add(remoteAutoSaveLabel, 0, 7);
-        grid.add(remoteAutoSaveSpinner, 1, 7);
+        grid.add(remoteAutoSaveLabel, 0, 5);
+        grid.add(remoteAutoSaveSpinner, 1, 5);
 
         dialog.getDialogPane().setContent(grid);
 
@@ -1007,8 +995,6 @@ public class DashboardController implements Initializable {
             // Save network settings
             SettingsManager.setNetworkEnabled(networkEnabled.isSelected());
             SettingsManager.setNetworkBaseUrl(networkUrlField.getText());
-            SettingsManager.setNetworkNamespace(namespaceField.getText());
-            SettingsManager.setNetworkApiKey(apiKeyField.getText());
             SettingsManager.setRemoteAutoSaveSeconds(remoteAutoSaveSpinner.getValue());
 
             showInfo("Settings saved successfully!\nChanges will apply to new tabs.");

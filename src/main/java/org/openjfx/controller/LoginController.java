@@ -16,13 +16,9 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.paint.Color;
 import org.openjfx.QuillPad;
 import org.openjfx.ThemeManager;
+import org.openjfx.auth.UserStore;
 
-import java.io.*;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.ResourceBundle;
 
 public class LoginController implements Initializable {
@@ -152,8 +148,7 @@ public class LoginController implements Initializable {
             return;
         }
 
-        Map<String, String> users = loadUsers();
-        if (users.containsKey(username) && users.get(username).equals(password)) {
+        if (UserStore.authenticate(username, password)) {
             errorLabel.setText("");
             mainApp.showDashboard(username);
         } else {
@@ -163,63 +158,7 @@ public class LoginController implements Initializable {
 
     @FXML
     private void handleRegister(ActionEvent event) {
-        String username = usernameField.getText().trim();
-        String password = passwordField.getText().trim();
-
-        if (username.isEmpty()) {
-            showError("Please enter a username");
-            usernameField.requestFocus();
-            return;
-        }
-
-        if (password.isEmpty()) {
-            showError("Please enter a password");
-            passwordField.requestFocus();
-            return;
-        }
-
-        if (username.length() < 3) {
-            showError("Username must be at least 3 characters");
-            return;
-        }
-
-        Map<String, String> users = loadUsers();
-        if (users.containsKey(username)) {
-            showError("Username already exists");
-            return;
-        }
-
-        try {
-            Files.createDirectories(Paths.get("."));
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter("users.txt", true))) {
-                writer.write(username + ":" + password);
-                writer.newLine();
-            }
-            errorLabel.setTextFill(Color.GREEN);
-            errorLabel.setText("Registration successful!");
-            mainApp.showDashboard(username);
-
-        } catch (IOException e) {
-            showError("Error saving user data.");
-        }
-    }
-
-    private Map<String, String> loadUsers() {
-        Map<String, String> users = new HashMap<>();
-        File file = new File("users.txt");
-        if (!file.exists()) return users;
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(":", 2);
-                if (parts.length == 2) {
-                    users.put(parts[0], parts[1]);
-                }
-            }
-        } catch (IOException e) {
-        }
-        return users;
+        mainApp.showRegister();
     }
 
     private void showError(String message) {
