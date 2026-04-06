@@ -26,12 +26,6 @@ public class QuillPad extends Application {
         this.primaryStage = stage;
         stage.setTitle("QuillPad - Professional Note Editor");
 
-        try {
-            // stage.getIcons().add(new Image(getClass().getResourceAsStream("/icon.png")));
-        } catch (Exception e) {
-            // Icon not found, continue without it
-        }
-
         // Load login scene
         loadLoginScene();
 

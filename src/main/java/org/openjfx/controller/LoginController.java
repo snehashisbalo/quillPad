@@ -36,9 +36,6 @@ public class LoginController implements Initializable {
     private CheckBox showPasswordCheckBox;
 
     @FXML
-    private Button loginButton;
-
-    @FXML
     private Button themeToggleButton;
 
     @FXML
