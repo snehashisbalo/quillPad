@@ -5,7 +5,6 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
@@ -184,14 +183,5 @@ public class LoginController implements Initializable {
         if (themeToggleButton != null) {
             themeToggleButton.setText(ThemeManager.getThemeIcon(ThemeManager.getCurrentTheme()));
         }
-    }
-
-    @FXML
-    private void handleForgotPassword(ActionEvent event) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Forgot Password");
-        alert.setHeaderText("Password Recovery");
-        alert.setContentText("Please contact the administrator to reset your password.\n\nDefault credentials:\nUsername: admin\nPassword: admin");
-        alert.showAndWait();
     }
 }

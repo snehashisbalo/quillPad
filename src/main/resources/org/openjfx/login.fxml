@@ -60,11 +60,6 @@
                     <!-- Header with Theme Toggle -->
                     <HBox alignment="CENTER">
                         <children>
-                            <Label text="QuillPad" styleClass="app-title">
-                                <font>
-                                    <Font name="System Bold" size="28"/>
-                                </font>
-                            </Label>
                             <Region HBox.hgrow="ALWAYS"/>
                             <Button fx:id="themeToggleButton" text="🌸"
                                     styleClass="theme-toggle-button"
@@ -72,35 +67,29 @@
                         </children>
                     </HBox>
 
-                    <!-- Subtitle -->
-                    <Label text="make sure your account is secure"
+                    <Label text="Welcome Back!" styleClass="app-title">
+                        <font>
+                            <Font name="System Bold" size="28"/>
+                        </font>
+                    </Label>
+
+                    <Label text="Enter your username and password"
                            styleClass="hint-label">
                         <font>
                             <Font size="12"/>
                         </font>
                     </Label>
 
-                    <!-- Username Field with Icon -->
+                    <!-- Username Field -->
                     <HBox styleClass="input-field-container" alignment="CENTER_LEFT">
-                        <padding>
-                            <Insets right="10" left="15"/>
-                        </padding>
                         <TextField fx:id="usernameField"
                                    promptText="Enter your username"
                                    styleClass="form-input"
                                    HBox.hgrow="ALWAYS"/>
-                        <Label text="👤" styleClass="input-icon">
-                            <HBox.margin>
-                                <Insets left="5"/>
-                            </HBox.margin>
-                        </Label>
                     </HBox>
 
-                    <!-- Password Field with Icon -->
+                    <!-- Password Field -->
                     <HBox styleClass="input-field-container" alignment="CENTER_LEFT">
-                        <padding>
-                            <Insets right="10" left="15"/>
-                        </padding>
                         <StackPane HBox.hgrow="ALWAYS">
                             <PasswordField fx:id="passwordField"
                                            promptText="Enter your password"
@@ -113,11 +102,6 @@
                                        managed="false"
                                        visible="false"/>
                         </StackPane>
-                        <Label text="🔒" styleClass="input-icon">
-                            <HBox.margin>
-                                <Insets left="5"/>
-                            </HBox.margin>
-                        </Label>
                     </HBox>
                     
                     <!-- Show/Hide Password Toggle -->
@@ -127,16 +111,6 @@
                                       text="Show Password"
                                       styleClass="show-password-checkbox"
                                       onAction="#handleShowPasswordToggle"/>
-                        </children>
-                    </HBox>
-
-                    <!-- Forgot Password / Register Links -->
-                    <HBox alignment="CENTER">
-                        <children>
-                            <Label text="Forgot Password?"
-                                   styleClass="hint-label link-label"
-                                   onMouseClicked="#handleForgotPassword"/>
-                            <Region HBox.hgrow="ALWAYS"/>
                         </children>
                     </HBox>
 

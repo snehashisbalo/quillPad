@@ -609,9 +609,12 @@ public class RichTextEditor extends StackPane {
         int start = selection.getStart();
         int end = selection.getEnd();
 
+        String insertionStyle = textArea.getTextStyleForInsertionAt(textArea.getCaretPosition());
+        insertionStyle = insertionStyle == null ? "" : insertionStyle.replaceAll("-fx-fill: [^;]+;", "");
+        textArea.setTextInsertionStyle(insertionStyle + String.format("-fx-fill: %s;", color));
+
         if (selection.getLength() == 0) {
-            start = textArea.getCaretPosition();
-            end = start + 1;
+            return;
         }
 
         if (end > start) {
@@ -627,9 +630,12 @@ public class RichTextEditor extends StackPane {
         int start = selection.getStart();
         int end = selection.getEnd();
 
+        String insertionStyle = textArea.getTextStyleForInsertionAt(textArea.getCaretPosition());
+        insertionStyle = insertionStyle == null ? "" : insertionStyle.replaceAll("-fx-background-color: [^;]+;", "");
+        textArea.setTextInsertionStyle(insertionStyle + String.format("-fx-background-color: %s;", color));
+
         if (selection.getLength() == 0) {
-            start = textArea.getCaretPosition();
-            end = start + 1;
+            return;
         }
 
         if (end > start) {

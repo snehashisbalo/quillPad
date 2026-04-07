@@ -55,6 +55,10 @@
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.4), 20, 0, 0, 5);
 }
 
+.dark-theme .login-container .form-container {
+    -fx-effect: dropshadow(gaussian, rgba(0, 153, 255, 0.65), 30, 0.4, 0, 0);
+}
+
 .dark-theme .form-label {
     -fx-text-fill: #cccccc;
 }
