@@ -24,6 +24,7 @@ import org.openjfx.RemoteNoteRegistry;
 import org.openjfx.SettingsManager;
 import org.openjfx.ThemeManager;
 import org.openjfx.component.RichTextEditor;
+import org.openjfx.model.StyledDocument;
 import org.openjfx.model.Tag;
 import org.openjfx.network.NetworkSyncService;
 import org.openjfx.service.NoteTagService;
@@ -195,7 +196,7 @@ public class EditorController implements Initializable {
 
         ObservableList<Integer> sizes = FXCollections.observableArrayList(FONT_SIZES);
         fontSizeCombo.setItems(sizes);
-        fontSizeCombo.setValue(SettingsManager.getFontSize());
+        setFontSizeComboValue(SettingsManager.getFontSize());
         fontSizeCombo.setCellFactory(listView -> new ListCell<>() {
             @Override
             protected void updateItem(Integer item, boolean empty) {
@@ -266,7 +267,11 @@ public class EditorController implements Initializable {
             findMenuItem.setOnAction(this::handleFind);
         }
         if (replaceMenuItem != null) {
-            replaceMenuItem.setAccelerator(new KeyCodeCombination(KeyCode.H, KeyCombination.SHORTCUT_DOWN));
+            replaceMenuItem.setAccelerator(new KeyCodeCombination(
+                    KeyCode.F,
+                    KeyCombination.SHORTCUT_DOWN,
+                    KeyCombination.ALT_DOWN
+            ));
             replaceMenuItem.setOnAction(this::handleReplace);
         }
         if (addTagMenuItem != null) {
@@ -312,7 +317,7 @@ public class EditorController implements Initializable {
         textColorPicker.setOnAction(e -> applyTextColor());
     }
 
-    private void createNewTab(String title) {
+    private Tab createNewTab(String title) {
         String tabTitle;
         if (title == null || title.isEmpty() || title.equals("Untitled")) {
             tabTitle = "Untitled-" + untitledCounter++;
@@ -335,6 +340,7 @@ public class EditorController implements Initializable {
         tabPane.getSelectionModel().select(tab);
 
         setupTabListeners(tab, editor);
+        return tab;
     }
 
     private void setupTabListeners(Tab tab, RichTextEditor editor) {
@@ -451,9 +457,12 @@ public class EditorController implements Initializable {
             }
 
             try {
-                createNewTab(loadedNote.noteName());
-                Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
-                RichTextEditor editor = tabEditorMap.get(currentTab);
+                Tab currentTab = createNewTab(loadedNote.noteName());
+                RichTextEditor editor = editorForTab(currentTab);
+                if (editor == null) {
+                    fileStatusLabel.setText("Error loading file");
+                    return;
+                }
                 loadEditorFromContent(editor, loadedNote.file(), loadedNote.content());
                 editor.setFont(Font.font(SettingsManager.getFontFamily(), SettingsManager.getFontSize()));
                 editor.setLanguageFromFileName(loadedNote.file().getName());
@@ -480,7 +489,11 @@ public class EditorController implements Initializable {
     }
 
     private boolean saveTab(Tab tab) {
-        RichTextEditor editor = tabEditorMap.get(tab);
+        RichTextEditor editor = editorForTab(tab);
+        if (editor == null) {
+            fileStatusLabel.setText("No editor available");
+            return false;
+        }
         String filePath = tabFilePathMap.get(tab);
 
         if (filePath == null || filePath.isBlank()) {
@@ -493,7 +506,10 @@ public class EditorController implements Initializable {
         }
 
         File file = new File(filePath);
-        file.getParentFile().mkdirs();
+        File parent = file.getParentFile();
+        if (parent != null) {
+            parent.mkdirs();
+        }
 
         try {
             writeEditorToFile(editor, file);
@@ -655,6 +671,17 @@ public class EditorController implements Initializable {
         createNewTab(null);
     }
 
+    private RichTextEditor editorForTab(Tab tab) {
+        return tab == null ? null : tabEditorMap.get(tab);
+    }
+
+    private RichTextEditor getActiveEditor() {
+        if (tabPane == null) {
+            return null;
+        }
+        return editorForTab(tabPane.getSelectionModel().getSelectedItem());
+    }
+
     @FXML private void handleOpen(ActionEvent event) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open File");
@@ -677,9 +704,12 @@ public class EditorController implements Initializable {
         }
         try {
             String fileName = file.getName();
-            createNewTab(fileName);
-            Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
-            RichTextEditor editor = tabEditorMap.get(currentTab);
+            Tab currentTab = createNewTab(fileName);
+            RichTextEditor editor = editorForTab(currentTab);
+            if (editor == null) {
+                showError("Failed to open file: editor is unavailable.");
+                return;
+            }
             loadEditorFromFile(editor, file);
             editor.setLanguageFromFileName(file.getName());
             tabFilePathMap.put(currentTab, file.getAbsolutePath());
@@ -696,7 +726,10 @@ public class EditorController implements Initializable {
     }
 
     private void writeEditorToFile(RichTextEditor editor, File file) throws IOException {
-        file.getParentFile().mkdirs();
+        File parent = file.getParentFile();
+        if (parent != null) {
+            parent.mkdirs();
+        }
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             writer.write(AppConstants.STYLED_DOC_HEADER);
             writer.newLine();
@@ -719,7 +752,7 @@ public class EditorController implements Initializable {
         editor.setText(content);
     }
 
-    private String encodeDocument(org.quillpad.collab.Document document) throws IOException {
+    private String encodeDocument(StyledDocument document) throws IOException {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         try (ObjectOutputStream out = new ObjectOutputStream(bytes)) {
             out.writeObject(document);
@@ -727,10 +760,28 @@ public class EditorController implements Initializable {
         return Base64.getEncoder().encodeToString(bytes.toByteArray());
     }
 
-    private org.quillpad.collab.Document decodeDocument(String encoded) throws IOException, ClassNotFoundException {
+    private StyledDocument decodeDocument(String encoded) throws IOException, ClassNotFoundException {
         byte[] bytes = Base64.getDecoder().decode(encoded);
-        try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes))) {
-            return (org.quillpad.collab.Document) in.readObject();
+        try (ObjectInputStream in = new CompatibleDocumentInputStream(new ByteArrayInputStream(bytes))) {
+            return (StyledDocument) in.readObject();
+        }
+    }
+
+    private static class CompatibleDocumentInputStream extends ObjectInputStream {
+        private static final String LEGACY_DOCUMENT_CLASS = "org.quillpad.collab.Document";
+        private static final String LEGACY_SEGMENT_CLASS = "org.quillpad.collab.Document$StyleSegment";
+
+        CompatibleDocumentInputStream(InputStream in) throws IOException {
+            super(in);
+        }
+
+        @Override
+        protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
+            return switch (desc.getName()) {
+                case LEGACY_DOCUMENT_CLASS, "org.openjfx.model.StyledDocument" -> StyledDocument.class;
+                case LEGACY_SEGMENT_CLASS, "org.openjfx.model.StyledDocument$StyleSegment" -> StyledDocument.StyleSegment.class;
+                default -> super.resolveClass(desc);
+            };
         }
     }
 
@@ -1044,8 +1095,11 @@ public class EditorController implements Initializable {
         grid.add(tagField, 1, 0);
 
         dialog.getDialogPane().setContent(grid);
+        dialog.getDialogPane().applyCss();
         Button addButton = (Button) dialog.getDialogPane().lookupButton(addButtonType);
-        addButton.disableProperty().bind(tagField.textProperty().isEmpty());
+        if (addButton != null) {
+            addButton.disableProperty().bind(tagField.textProperty().isEmpty());
+        }
 
         Platform.runLater(tagField::requestFocus);
 
@@ -1100,7 +1154,7 @@ public class EditorController implements Initializable {
 
         for (Tag tag : tags) {
             Button chip = new Button("#" + tag.displayName() + " ×");
-            chip.getStyleClass().add("icon-button");
+            chip.getStyleClass().add("tag-chip-button");
             chip.setOnAction(event -> {
                 try {
                     noteTagService.removeTag(Path.of(getUserNotesDir()), managedNotePath.getFileName().toString(), tag.displayName());
@@ -1343,118 +1397,200 @@ public class EditorController implements Initializable {
     }
 
     @FXML private void handleUndo(ActionEvent event) {
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            RichTextEditor editor = tabEditorMap.get(selectedTab);
+        RichTextEditor editor = getActiveEditor();
+        if (editor != null) {
             editor.undo();
         }
     }
 
     @FXML private void handleRedo(ActionEvent event) {
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            RichTextEditor editor = tabEditorMap.get(selectedTab);
+        RichTextEditor editor = getActiveEditor();
+        if (editor != null) {
             editor.redo();
         }
     }
 
     @FXML private void handleCut(ActionEvent event) {
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            RichTextEditor editor = tabEditorMap.get(selectedTab);
+        RichTextEditor editor = getActiveEditor();
+        if (editor != null) {
             editor.cut();
         }
     }
 
     @FXML private void handleCopy(ActionEvent event) {
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            RichTextEditor editor = tabEditorMap.get(selectedTab);
+        RichTextEditor editor = getActiveEditor();
+        if (editor != null) {
             editor.copy();
         }
     }
 
     @FXML private void handlePaste(ActionEvent event) {
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            RichTextEditor editor = tabEditorMap.get(selectedTab);
+        RichTextEditor editor = getActiveEditor();
+        if (editor != null) {
             editor.paste();
         }
     }
 
     @FXML private void handleSelectAll(ActionEvent event) {
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            RichTextEditor editor = tabEditorMap.get(selectedTab);
+        RichTextEditor editor = getActiveEditor();
+        if (editor != null) {
             editor.selectAll();
         }
     }
 
     @FXML private void handleFind(ActionEvent event) {
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            RichTextEditor editor = tabEditorMap.get(selectedTab);
+        RichTextEditor editor = getActiveEditor();
+        if (editor != null) {
             showFindDialog(editor);
         }
     }
 
     @FXML private void handleReplace(ActionEvent event) {
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            RichTextEditor editor = tabEditorMap.get(selectedTab);
+        RichTextEditor editor = getActiveEditor();
+        if (editor == null) {
+            return;
+        }
 
-            Dialog<ButtonType> dialog = new Dialog<>();
-            dialog.setTitle("Find and Replace");
-            dialog.setHeaderText("Replace text:");
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Find and Replace");
+        dialog.setHeaderText(null);
 
-            ButtonType replaceAllButtonType = new ButtonType("Replace All", ButtonBar.ButtonData.OK_DONE);
-            dialog.getDialogPane().getButtonTypes().addAll(replaceAllButtonType, ButtonType.CANCEL);
+        ButtonType findNextType = new ButtonType("Find Next", ButtonBar.ButtonData.LEFT);
+        ButtonType replaceType = new ButtonType("Replace", ButtonBar.ButtonData.LEFT);
+        ButtonType replaceAllType = new ButtonType("Replace All", ButtonBar.ButtonData.LEFT);
+        ButtonType closeType = new ButtonType("Close", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().addAll(findNextType, replaceType, replaceAllType, closeType);
 
-            GridPane grid = new GridPane();
-            grid.setHgap(10);
-            grid.setVgap(10);
-            grid.setPadding(new Insets(20, 150, 10, 10));
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 20, 10, 10));
 
-            TextField findField = new TextField();
-            findField.setPromptText("Find");
-            TextField replaceField = new TextField();
-            replaceField.setPromptText("Replace with");
+        TextField findField = new TextField();
+        findField.setPromptText("Find");
+        findField.setPrefWidth(280);
+        TextField replaceField = new TextField();
+        replaceField.setPromptText("Replace with");
+        replaceField.setPrefWidth(280);
+        Label statusLabel = new Label("");
 
-            grid.add(new Label("Find:"), 0, 0);
-            grid.add(findField, 1, 0);
-            grid.add(new Label("Replace:"), 0, 1);
-            grid.add(replaceField, 1, 1);
+        grid.add(new Label("Find:"), 0, 0);
+        grid.add(findField, 1, 0);
+        grid.add(new Label("Replace:"), 0, 1);
+        grid.add(replaceField, 1, 1);
+        grid.add(statusLabel, 1, 2);
 
-            dialog.getDialogPane().setContent(grid);
+        dialog.getDialogPane().setContent(grid);
 
-            Platform.runLater(findField::requestFocus);
+        java.util.List<Integer> matches = new ArrayList<>();
+        int[] currentMatchIndex = {-1};
 
-            Optional<ButtonType> result = dialog.showAndWait();
-            if (result.isPresent() && result.get() == replaceAllButtonType) {
-                String findText = findField.getText();
-                String replaceText = replaceField.getText();
-                if (!findText.isEmpty()) {
-                    try {
-                        int replacements = editor.replaceAll(findText, replaceText);
-                        if (replacements > 0) {
-                            fileStatusLabel.setText("Replaced " + replacements + " occurrence" + (replacements == 1 ? "" : "s"));
-                            showInfo("Replaced " + replacements + " occurrence" + (replacements == 1 ? "" : "s") + ".");
-                        } else {
-                            showInfo("Text not found: " + findText);
+        Runnable refreshMatches = () -> {
+            matches.clear();
+            currentMatchIndex[0] = -1;
+            String query = findField.getText();
+            if (query == null || query.isEmpty()) {
+                statusLabel.setText("");
+                editor.clearSelection();
+                return;
+            }
+            matches.addAll(findAllMatches(editor.getText(), query));
+            if (matches.isEmpty()) {
+                statusLabel.setText("Not found");
+                editor.clearSelection();
+                return;
+            }
+            currentMatchIndex[0] = 0;
+            selectSearchMatch(editor, query, matches, 0, statusLabel);
+        };
+
+        findField.textProperty().addListener((obs, oldVal, newVal) -> refreshMatches.run());
+
+        dialog.getDialogPane().applyCss();
+        Button findNextBtn = (Button) dialog.getDialogPane().lookupButton(findNextType);
+        Button replaceBtn = (Button) dialog.getDialogPane().lookupButton(replaceType);
+        Button replaceAllBtn = (Button) dialog.getDialogPane().lookupButton(replaceAllType);
+
+        if (findNextBtn != null) {
+            findNextBtn.addEventFilter(ActionEvent.ACTION, e -> {
+                e.consume();
+                if (matches.isEmpty()) {
+                    refreshMatches.run();
+                    return;
+                }
+                currentMatchIndex[0] = currentMatchIndex[0] < 0 ? 0
+                        : (currentMatchIndex[0] + 1) % matches.size();
+                selectSearchMatch(editor, findField.getText(), matches, currentMatchIndex[0], statusLabel);
+            });
+        }
+
+        if (replaceBtn != null) {
+            replaceBtn.addEventFilter(ActionEvent.ACTION, e -> {
+                e.consume();
+                if (matches.isEmpty() || currentMatchIndex[0] < 0) {
+                    refreshMatches.run();
+                    return;
+                }
+                String query = findField.getText();
+                String replacement = replaceField.getText() == null ? "" : replaceField.getText();
+                int start = matches.get(currentMatchIndex[0]);
+                int end = start + query.length();
+                if (editor.replaceAt(start, end, replacement)) {
+                    // Recalculate matches after the edit and advance to next
+                    matches.clear();
+                    currentMatchIndex[0] = -1;
+                    matches.addAll(findAllMatches(editor.getText(), query));
+                    if (matches.isEmpty()) {
+                        statusLabel.setText("No more occurrences");
+                        editor.clearSelection();
+                    } else {
+                        // Find the match at or after the replacement end
+                        int nextPos = start + replacement.length();
+                        currentMatchIndex[0] = 0;
+                        for (int i = 0; i < matches.size(); i++) {
+                            if (matches.get(i) >= nextPos) {
+                                currentMatchIndex[0] = i;
+                                break;
+                            }
                         }
-                    } catch (Exception e) {
-                        showError("Replace failed: " + e.getMessage());
+                        selectSearchMatch(editor, query, matches, currentMatchIndex[0], statusLabel);
                     }
                 }
-            }
+            });
         }
+
+        if (replaceAllBtn != null) {
+            replaceAllBtn.addEventFilter(ActionEvent.ACTION, e -> {
+                e.consume();
+                String query = findField.getText();
+                String replacement = replaceField.getText() == null ? "" : replaceField.getText();
+                if (query == null || query.isEmpty()) {
+                    return;
+                }
+                int count = editor.replaceAll(query, replacement);
+                matches.clear();
+                currentMatchIndex[0] = -1;
+                statusLabel.setText(count > 0
+                        ? "Replaced " + count + " occurrence" + (count == 1 ? "" : "s")
+                        : "Not found");
+                if (fileStatusLabel != null) {
+                    fileStatusLabel.setText(statusLabel.getText());
+                }
+            });
+        }
+
+        Platform.runLater(findField::requestFocus);
+        dialog.showAndWait();
+        editor.clearSelection();
     }
 
     @FXML private void handleWordWrap(ActionEvent event) {
         boolean wrapText = wordWrapMenuItem.isSelected();
         for (Tab tab : tabPane.getTabs()) {
-            RichTextEditor editor = tabEditorMap.get(tab);
-            editor.setWrapText(wrapText);
+            RichTextEditor editor = editorForTab(tab);
+            if (editor != null) {
+                editor.setWrapText(wrapText);
+            }
         }
     }
 
@@ -1476,53 +1612,43 @@ public class EditorController implements Initializable {
     }
 
     @FXML private void handleIncreaseFont(ActionEvent event) {
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            RichTextEditor editor = tabEditorMap.get(selectedTab);
-            String currentStyle = editor.getTextArea().getStyle();
-            double currentSize = SettingsManager.getFontSize();
-            
-            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("-fx-font-size: ([0-9.]+)px;");
-            java.util.regex.Matcher matcher = pattern.matcher(currentStyle);
-            if (matcher.find()) {
-                currentSize = Double.parseDouble(matcher.group(1));
-            }
-            
-            double newSize = Math.min(72, currentSize + 2);
+        RichTextEditor editor = getActiveEditor();
+        if (editor != null) {
+            double newSize = Math.min(72, currentEditorFontSize(editor) + 2);
             editor.setFont(Font.font(SettingsManager.getFontFamily(), newSize));
-            fontSizeCombo.setValue((int) newSize);
-            fileStatusLabel.setText("Font size: " + (int)newSize + "px");
+            setFontSizeComboValue((int) newSize);
+            fileStatusLabel.setText("Font size: " + (int) newSize + "px");
         }
     }
 
     @FXML private void handleDecreaseFont(ActionEvent event) {
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            RichTextEditor editor = tabEditorMap.get(selectedTab);
-            String currentStyle = editor.getTextArea().getStyle();
-            double currentSize = SettingsManager.getFontSize();
-            
-            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("-fx-font-size: ([0-9.]+)px;");
-            java.util.regex.Matcher matcher = pattern.matcher(currentStyle);
-            if (matcher.find()) {
-                currentSize = Double.parseDouble(matcher.group(1));
-            }
-            
-            double newSize = Math.max(8, currentSize - 2);
+        RichTextEditor editor = getActiveEditor();
+        if (editor != null) {
+            double newSize = Math.max(8, currentEditorFontSize(editor) - 2);
             editor.setFont(Font.font(SettingsManager.getFontFamily(), newSize));
-            fontSizeCombo.setValue((int) newSize);
-            fileStatusLabel.setText("Font size: " + (int)newSize + "px");
+            setFontSizeComboValue((int) newSize);
+            fileStatusLabel.setText("Font size: " + (int) newSize + "px");
         }
     }
 
+    /** Returns the current font size of the editor, reading from its inline style if set. */
+    private double currentEditorFontSize(RichTextEditor editor) {
+        java.util.regex.Matcher matcher = java.util.regex.Pattern
+                .compile("-fx-font-size: ([0-9.]+)px;")
+                .matcher(editor.getTextArea().getStyle());
+        if (matcher.find()) {
+            return Double.parseDouble(matcher.group(1));
+        }
+        return SettingsManager.getFontSize();
+    }
+
     @FXML private void handleResetFont(ActionEvent event) {
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            RichTextEditor editor = tabEditorMap.get(selectedTab);
+        RichTextEditor editor = getActiveEditor();
+        if (editor != null) {
             int savedSize = SettingsManager.getFontSize();
             editor.setFont(Font.font(SettingsManager.getFontFamily(), savedSize));
             fontFamilyCombo.setValue(SettingsManager.getFontFamily());
-            fontSizeCombo.setValue(savedSize);
+            setFontSizeComboValue(savedSize);
             fileStatusLabel.setText("Font reset");
         }
     }
@@ -1531,9 +1657,8 @@ public class EditorController implements Initializable {
         if (updatingToolbarState) {
             return;
         }
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            RichTextEditor editor = tabEditorMap.get(selectedTab);
+        RichTextEditor editor = getActiveEditor();
+        if (editor != null) {
             String fontFamily = fontFamilyCombo.getValue();
             if (fontFamily != null) {
                 editor.applyFontFamilyToSelection(fontFamily);
@@ -1545,9 +1670,8 @@ public class EditorController implements Initializable {
         if (updatingToolbarState) {
             return;
         }
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            RichTextEditor editor = tabEditorMap.get(selectedTab);
+        RichTextEditor editor = getActiveEditor();
+        if (editor != null) {
             Integer fontSize = fontSizeCombo.getValue();
             if (fontSize != null) {
                 editor.applyFontSizeToSelection(fontSize);
@@ -1556,36 +1680,32 @@ public class EditorController implements Initializable {
     }
 
     private void applyBold() {
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            RichTextEditor editor = tabEditorMap.get(selectedTab);
+        RichTextEditor editor = getActiveEditor();
+        if (editor != null) {
             editor.applyBoldToSelection(boldButton.isSelected());
             refreshFormatToggleButtons(editor);
         }
     }
 
     private void applyItalic() {
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            RichTextEditor editor = tabEditorMap.get(selectedTab);
+        RichTextEditor editor = getActiveEditor();
+        if (editor != null) {
             editor.applyItalicToSelection(italicButton.isSelected());
             refreshFormatToggleButtons(editor);
         }
     }
 
     private void applyUnderline() {
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            RichTextEditor editor = tabEditorMap.get(selectedTab);
+        RichTextEditor editor = getActiveEditor();
+        if (editor != null) {
             editor.applyUnderlineToSelection(underlineButton.isSelected());
             refreshFormatToggleButtons(editor);
         }
     }
 
     private void applyStrikethrough() {
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            RichTextEditor editor = tabEditorMap.get(selectedTab);
+        RichTextEditor editor = getActiveEditor();
+        if (editor != null) {
             editor.applyStrikethroughToSelection(strikethroughButton.isSelected());
             refreshFormatToggleButtons(editor);
         }
@@ -1598,20 +1718,31 @@ public class EditorController implements Initializable {
         updatingToolbarState = true;
         try {
             fontFamilyCombo.setValue(editor.getCurrentFontFamily());
-            fontSizeCombo.setValue(editor.getCurrentFontSize());
-        boldButton.setSelected(editor.isBoldActive());
-        italicButton.setSelected(editor.isItalicActive());
-        underlineButton.setSelected(editor.isUnderlineActive());
-        strikethroughButton.setSelected(editor.isStrikethroughActive());
+            setFontSizeComboValue(editor.getCurrentFontSize());
+            boldButton.setSelected(editor.isBoldActive());
+            italicButton.setSelected(editor.isItalicActive());
+            underlineButton.setSelected(editor.isUnderlineActive());
+            strikethroughButton.setSelected(editor.isStrikethroughActive());
         } finally {
             updatingToolbarState = false;
         }
     }
 
+    private void setFontSizeComboValue(int size) {
+        if (fontSizeCombo == null) {
+            return;
+        }
+        ObservableList<Integer> items = fontSizeCombo.getItems();
+        if (items != null && !items.contains(size)) {
+            items.add(size);
+            FXCollections.sort(items);
+        }
+        fontSizeCombo.setValue(size);
+    }
+
     private void applyTextColor() {
-        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
-        if (selectedTab != null) {
-            RichTextEditor editor = tabEditorMap.get(selectedTab);
+        RichTextEditor editor = getActiveEditor();
+        if (editor != null) {
             Color color = textColorPicker.getValue();
             if (color != null) {
                 String colorHex = String.format("#%02X%02X%02X", 
@@ -1735,16 +1866,21 @@ public class EditorController implements Initializable {
         findField.textProperty().addListener((obs, oldValue, newValue) -> refreshMatches.run());
         findField.setOnAction(e -> goNext.run());
 
+        dialog.getDialogPane().applyCss();
         Button previousButton = (Button) dialog.getDialogPane().lookupButton(previousButtonType);
         Button nextButton = (Button) dialog.getDialogPane().lookupButton(nextButtonType);
-        previousButton.addEventFilter(ActionEvent.ACTION, e -> {
-            e.consume();
-            goPrevious.run();
-        });
-        nextButton.addEventFilter(ActionEvent.ACTION, e -> {
-            e.consume();
-            goNext.run();
-        });
+        if (previousButton != null) {
+            previousButton.addEventFilter(ActionEvent.ACTION, e -> {
+                e.consume();
+                goPrevious.run();
+            });
+        }
+        if (nextButton != null) {
+            nextButton.addEventFilter(ActionEvent.ACTION, e -> {
+                e.consume();
+                goNext.run();
+            });
+        }
 
         Platform.runLater(findField::requestFocus);
         dialog.showAndWait();
@@ -1769,16 +1905,14 @@ public class EditorController implements Initializable {
             return;
         }
         int start = matches.get(matchIndex);
-        editor.selectRange(start, start + query.length());
+        int end = start + query.length();
+        int docLen = editor.getText().length();
+        if (start < 0 || end > docLen) {
+            countLabel.setText("0 matches");
+            return;
+        }
+        editor.selectRange(start, end);
         editor.getTextArea().requestFocus();
         countLabel.setText((matchIndex + 1) + " of " + matches.size() + " matches");
-    }
-
-    private void showInfo(String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Information");
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
     }
 }

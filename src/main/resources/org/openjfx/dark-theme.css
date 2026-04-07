@@ -223,6 +223,26 @@
     -fx-text-fill: white;
 }
 
+.dark-theme .note-title-label {
+    -fx-text-fill: #cccccc;
+}
+
+.dark-theme .tag-chip {
+    -fx-background-color: rgba(76, 175, 80, 0.18);
+    -fx-border-color: #4caf50;
+    -fx-text-fill: #9BE29F;
+}
+
+.dark-theme .notes-list .list-cell:selected .note-title-label {
+    -fx-text-fill: white;
+}
+
+.dark-theme .notes-list .list-cell:selected .tag-chip {
+    -fx-background-color: rgba(255, 255, 255, 0.18);
+    -fx-border-color: rgba(255, 255, 255, 0.72);
+    -fx-text-fill: white;
+}
+
 .dark-theme .icon-button {
     -fx-text-fill: #4caf50;
     -fx-border-color: #4caf50;
@@ -231,6 +251,38 @@
 .dark-theme .icon-button:hover {
     -fx-background-color: #4caf50;
     -fx-text-fill: white;
+}
+
+.dark-theme .tag-chip-button {
+    -fx-background-color: rgba(76, 175, 80, 0.18);
+    -fx-text-fill: #9BE29F;
+    -fx-border-color: #4caf50;
+}
+
+.dark-theme .tag-chip-button:hover {
+    -fx-background-color: #4caf50;
+    -fx-text-fill: white;
+}
+
+.dark-theme .formatting-toolbar .tag-chip-button {
+    -fx-background-color: rgba(76, 175, 80, 0.22);
+    -fx-text-fill: #9BE29F;
+    -fx-border-color: #4caf50;
+    -fx-border-radius: 999;
+    -fx-background-radius: 999;
+}
+
+.dark-theme .formatting-toolbar .tag-chip-button:hover {
+    -fx-background-color: #4caf50;
+    -fx-text-fill: white;
+}
+
+.dark-theme .formatting-toolbar .tag-chip-button .text {
+    -fx-fill: #9BE29F;
+}
+
+.dark-theme .formatting-toolbar .tag-chip-button:hover .text {
+    -fx-fill: white;
 }
 
 .dark-theme .delete-button {

@@ -33,6 +33,8 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import org.openjfx.AppConstants;
@@ -132,19 +134,7 @@ public class DashboardController implements Initializable {
     }
 
     private void setupSearchBinding() {
-        recentProjectsList.setCellFactory(listView -> new ListCell<>() {
-            @Override
-            protected void updateItem(Note item, boolean empty) {
-                super.updateItem(item, empty);
-                getProperties().put("list-cell", this);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    String prefix = item.starred() ? "★ " : "";
-                    setText(prefix + formatNoteLabel(item));
-                }
-            }
-        });
+        recentProjectsList.setCellFactory(listView -> createNoteListCell());
 
         if (searchField != null) {
             searchField.textProperty().addListener((obs, oldVal, newVal) -> applyCombinedSearch(newVal));
@@ -449,8 +439,11 @@ public class DashboardController implements Initializable {
 
             ButtonType uploadButtonType = new ButtonType("Upload Selected", ButtonBar.ButtonData.OK_DONE);
             dialog.getDialogPane().getButtonTypes().addAll(uploadButtonType, ButtonType.CANCEL);
+            dialog.getDialogPane().applyCss();
             Button uploadBtn = (Button) dialog.getDialogPane().lookupButton(uploadButtonType);
-            uploadBtn.disableProperty().bind(listView.getSelectionModel().selectedItemProperty().isNull());
+            if (uploadBtn != null) {
+                uploadBtn.disableProperty().bind(listView.getSelectionModel().selectedItemProperty().isNull());
+            }
 
             Optional<ButtonType> result = dialog.showAndWait();
             if (result.isEmpty() || result.get() != uploadButtonType) {
@@ -573,58 +566,65 @@ public class DashboardController implements Initializable {
         ButtonType refreshButtonType = new ButtonType("Refresh");
         dialog.getDialogPane().getButtonTypes().addAll(downloadButtonType, refreshButtonType, ButtonType.CLOSE);
 
+        dialog.getDialogPane().applyCss();
         Button downloadButton = (Button) dialog.getDialogPane().lookupButton(downloadButtonType);
         Button refreshButton = (Button) dialog.getDialogPane().lookupButton(refreshButtonType);
         BooleanProperty downloadInProgress = new SimpleBooleanProperty(false);
-        downloadButton.disableProperty().bind(Bindings.or(listView.getSelectionModel().selectedItemProperty().isNull(), downloadInProgress));
+        if (downloadButton != null) {
+            downloadButton.disableProperty().bind(Bindings.or(listView.getSelectionModel().selectedItemProperty().isNull(), downloadInProgress));
+        }
 
-        refreshButton.addEventFilter(ActionEvent.ACTION, e -> {
-            e.consume();
-            refreshButton.setDisable(true);
-            NetworkSyncService.listRemoteNotesDetailedAsync(remoteNamespace())
-                    .whenComplete((remoteList, throwable) -> Platform.runLater(() -> {
-                        refreshButton.setDisable(false);
-                        if (throwable != null) {
-                            showError("Refresh failed: " + throwable.getMessage());
-                            return;
-                        }
-                        notesModel.setAll(remoteList == null ? List.of() : remoteList);
-                    }));
-        });
+        if (refreshButton != null) {
+            refreshButton.addEventFilter(ActionEvent.ACTION, e -> {
+                e.consume();
+                refreshButton.setDisable(true);
+                NetworkSyncService.listRemoteNotesDetailedAsync(remoteNamespace())
+                        .whenComplete((remoteList, throwable) -> Platform.runLater(() -> {
+                            refreshButton.setDisable(false);
+                            if (throwable != null) {
+                                showError("Refresh failed: " + throwable.getMessage());
+                                return;
+                            }
+                            notesModel.setAll(remoteList == null ? List.of() : remoteList);
+                        }));
+            });
+        }
 
-        downloadButton.addEventFilter(ActionEvent.ACTION, e -> {
-            e.consume();
-            List<NetworkSyncService.RemoteNoteRef> selected = new ArrayList<>(listView.getSelectionModel().getSelectedItems());
-            if (selected.isEmpty()) {
-                return;
-            }
-            downloadInProgress.set(true);
-            downloadRemoteNotes(selected)
-                    .whenComplete((summary, throwable) -> Platform.runLater(() -> {
-                        downloadInProgress.set(false);
-                        if (throwable != null) {
-                            showError("Download failed: " + throwable.getMessage());
-                            return;
-                        }
-                        loadRecentProjects(DashboardView.MY_NOTES);
-                        StringBuilder message = new StringBuilder("Download complete.\nSelected: " + summary.attempted()
-                                + "\nSucceeded: " + summary.success()
-                                + "\nFailed: " + summary.failed());
-                        if (summary.success() > 0 && !summary.savedFiles().isEmpty()) {
-                            message.append("\n\nSaved files:");
-                            for (String file : summary.savedFiles()) {
-                                message.append("\n- ").append(file);
+        if (downloadButton != null) {
+            downloadButton.addEventFilter(ActionEvent.ACTION, e -> {
+                e.consume();
+                List<NetworkSyncService.RemoteNoteRef> selected = new ArrayList<>(listView.getSelectionModel().getSelectedItems());
+                if (selected.isEmpty()) {
+                    return;
+                }
+                downloadInProgress.set(true);
+                downloadRemoteNotes(selected)
+                        .whenComplete((summary, throwable) -> Platform.runLater(() -> {
+                            downloadInProgress.set(false);
+                            if (throwable != null) {
+                                showError("Download failed: " + throwable.getMessage());
+                                return;
                             }
-                        }
-                        if (summary.failed() > 0 && !summary.errors().isEmpty()) {
-                            message.append("\n\nSample errors:");
-                            for (String error : summary.errors()) {
-                                message.append("\n- ").append(error);
+                            loadRecentProjects(DashboardView.MY_NOTES);
+                            StringBuilder message = new StringBuilder("Download complete.\nSelected: " + summary.attempted()
+                                    + "\nSucceeded: " + summary.success()
+                                    + "\nFailed: " + summary.failed());
+                            if (summary.success() > 0 && !summary.savedFiles().isEmpty()) {
+                                message.append("\n\nSaved files:");
+                                for (String file : summary.savedFiles()) {
+                                    message.append("\n- ").append(file);
+                                }
                             }
-                        }
-                        showInfo(message.toString());
-                    }));
-        });
+                            if (summary.failed() > 0 && !summary.errors().isEmpty()) {
+                                message.append("\n\nSample errors:");
+                                for (String error : summary.errors()) {
+                                    message.append("\n- ").append(error);
+                                }
+                            }
+                            showInfo(message.toString());
+                        }));
+            });
+        }
 
         dialog.showAndWait();
     }
@@ -656,67 +656,74 @@ public class DashboardController implements Initializable {
         ButtonType refreshButtonType = new ButtonType("Refresh");
         dialog.getDialogPane().getButtonTypes().addAll(deleteButtonType, refreshButtonType, ButtonType.CLOSE);
 
+        dialog.getDialogPane().applyCss();
         Button deleteButton = (Button) dialog.getDialogPane().lookupButton(deleteButtonType);
         Button refreshButton = (Button) dialog.getDialogPane().lookupButton(refreshButtonType);
         BooleanProperty deleteInProgress = new SimpleBooleanProperty(false);
-        deleteButton.disableProperty().bind(Bindings.or(listView.getSelectionModel().selectedItemProperty().isNull(), deleteInProgress));
+        if (deleteButton != null) {
+            deleteButton.disableProperty().bind(Bindings.or(listView.getSelectionModel().selectedItemProperty().isNull(), deleteInProgress));
+        }
 
-        refreshButton.addEventFilter(ActionEvent.ACTION, e -> {
-            e.consume();
-            refreshButton.setDisable(true);
-            NetworkSyncService.listRemoteNotesDetailedAsync(remoteNamespace())
-                    .whenComplete((remoteList, throwable) -> Platform.runLater(() -> {
-                        refreshButton.setDisable(false);
-                        if (throwable != null) {
-                            showError("Refresh failed: " + throwable.getMessage());
-                            return;
-                        }
-                        notesModel.setAll((remoteList == null ? List.<NetworkSyncService.RemoteNoteRef>of() : remoteList)
-                                .stream()
-                                .filter(note -> currentUser != null && currentUser.equals(note.author()))
-                                .toList());
-                    }));
-        });
-
-        deleteButton.addEventFilter(ActionEvent.ACTION, e -> {
-            e.consume();
-            List<NetworkSyncService.RemoteNoteRef> selected = new ArrayList<>(listView.getSelectionModel().getSelectedItems());
-            if (selected.isEmpty()) {
-                return;
-            }
-
-            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-            confirm.setTitle("Delete Uploaded Notes");
-            confirm.setHeaderText("Delete " + selected.size() + " selected server note" + (selected.size() == 1 ? "" : "s") + "?");
-            confirm.setContentText("This removes them from the server.");
-            Optional<ButtonType> result = confirm.showAndWait();
-            if (result.isEmpty() || result.get() != ButtonType.OK) {
-                return;
-            }
-
-            deleteInProgress.set(true);
-            deleteRemoteNotes(selected)
-                    .whenComplete((summary, throwable) -> Platform.runLater(() -> {
-                        deleteInProgress.set(false);
-                        if (throwable != null) {
-                            showError("Delete failed: " + throwable.getMessage());
-                            return;
-                        }
-                        if (!summary.deletedRefs().isEmpty()) {
-                            notesModel.removeAll(summary.deletedRefs());
-                        }
-                        StringBuilder message = new StringBuilder("Remote delete complete.\nSelected: " + summary.attempted()
-                                + "\nSucceeded: " + summary.success()
-                                + "\nFailed: " + summary.failed());
-                        if (summary.failed() > 0 && !summary.errors().isEmpty()) {
-                            message.append("\n\nSample errors:");
-                            for (String error : summary.errors()) {
-                                message.append("\n- ").append(error);
+        if (refreshButton != null) {
+            refreshButton.addEventFilter(ActionEvent.ACTION, e -> {
+                e.consume();
+                refreshButton.setDisable(true);
+                NetworkSyncService.listRemoteNotesDetailedAsync(remoteNamespace())
+                        .whenComplete((remoteList, throwable) -> Platform.runLater(() -> {
+                            refreshButton.setDisable(false);
+                            if (throwable != null) {
+                                showError("Refresh failed: " + throwable.getMessage());
+                                return;
                             }
-                        }
-                        showInfo(message.toString());
-                    }));
-        });
+                            notesModel.setAll((remoteList == null ? List.<NetworkSyncService.RemoteNoteRef>of() : remoteList)
+                                    .stream()
+                                    .filter(note -> currentUser != null && currentUser.equals(note.author()))
+                                    .toList());
+                        }));
+            });
+        }
+
+        if (deleteButton != null) {
+            deleteButton.addEventFilter(ActionEvent.ACTION, e -> {
+                e.consume();
+                List<NetworkSyncService.RemoteNoteRef> selected = new ArrayList<>(listView.getSelectionModel().getSelectedItems());
+                if (selected.isEmpty()) {
+                    return;
+                }
+
+                Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+                confirm.setTitle("Delete Uploaded Notes");
+                confirm.setHeaderText("Delete " + selected.size() + " selected server note" + (selected.size() == 1 ? "" : "s") + "?");
+                confirm.setContentText("This removes them from the server.");
+                Optional<ButtonType> result = confirm.showAndWait();
+                if (result.isEmpty() || result.get() != ButtonType.OK) {
+                    return;
+                }
+
+                deleteInProgress.set(true);
+                deleteRemoteNotes(selected)
+                        .whenComplete((summary, throwable) -> Platform.runLater(() -> {
+                            deleteInProgress.set(false);
+                            if (throwable != null) {
+                                showError("Delete failed: " + throwable.getMessage());
+                                return;
+                            }
+                            if (!summary.deletedRefs().isEmpty()) {
+                                notesModel.removeAll(summary.deletedRefs());
+                            }
+                            StringBuilder message = new StringBuilder("Remote delete complete.\nSelected: " + summary.attempted()
+                                    + "\nSucceeded: " + summary.success()
+                                    + "\nFailed: " + summary.failed());
+                            if (summary.failed() > 0 && !summary.errors().isEmpty()) {
+                                message.append("\n\nSample errors:");
+                                for (String error : summary.errors()) {
+                                    message.append("\n- ").append(error);
+                                }
+                            }
+                            showInfo(message.toString());
+                        }));
+            });
+        }
 
         dialog.showAndWait();
     }
@@ -988,6 +995,7 @@ public class DashboardController implements Initializable {
         grid.add(remoteAutoSaveSpinner, 1, 5);
 
         dialog.getDialogPane().setContent(grid);
+        dialog.getDialogPane().applyCss();
 
         Button saveButton = (Button) dialog.getDialogPane().lookupButton(saveButtonType);
         if (saveButton != null) {
@@ -1034,18 +1042,7 @@ public class DashboardController implements Initializable {
 
     private void setupNoteListContextMenu() {
         recentProjectsList.setCellFactory(listView -> {
-            ListCell<Note> cell = new ListCell<>() {
-                @Override
-                protected void updateItem(Note item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (empty || item == null) {
-                        setText(null);
-                    } else {
-                        String prefix = item.starred() ? "★ " : "";
-                        setText(prefix + formatNoteLabel(item));
-                    }
-                }
-            };
+            ListCell<Note> cell = createNoteListCell();
 
             MenuItem toggleStarItem = new MenuItem("Toggle Star");
             toggleStarItem.setOnAction(e -> {
@@ -1251,15 +1248,64 @@ public class DashboardController implements Initializable {
         if (note == null) {
             return "";
         }
-        if (note.getTags().isEmpty()) {
-            return note.displayName();
+        return note.displayName();
+    }
+
+    private ListCell<Note> createNoteListCell() {
+        return new ListCell<>() {
+            @Override
+            protected void updateItem(Note item, boolean empty) {
+                super.updateItem(item, empty);
+                getProperties().put("list-cell", this);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                    return;
+                }
+
+                Label nameLabel = new Label(buildNotePrefix(item) + formatNoteLabel(item));
+                nameLabel.getStyleClass().add("note-title-label");
+
+                Region spacer = new Region();
+                HBox.setHgrow(spacer, Priority.ALWAYS);
+
+                FlowPane tagPane = new FlowPane();
+                tagPane.setHgap(6);
+                tagPane.setVgap(4);
+                tagPane.getStyleClass().add("note-tag-pane");
+                for (Tag tag : item.getTags()) {
+                    Label tagChip = new Label("#" + tag.displayName());
+                    tagChip.getStyleClass().add("tag-chip");
+                    tagPane.getChildren().add(tagChip);
+                }
+
+                HBox container = new HBox(10, nameLabel, spacer, tagPane);
+                container.getStyleClass().add("note-row");
+                container.setFillHeight(true);
+
+                setText(null);
+                setGraphic(container);
+            }
+        };
+    }
+
+    private String buildNotePrefix(Note note) {
+        StringBuilder prefix = new StringBuilder();
+        if (note.starred()) {
+            prefix.append("★ ");
         }
-        String joinedTags = note.getTags().stream()
-                .map(tag -> "#" + tag.displayName())
-                .limit(3)
-                .reduce((left, right) -> left + " " + right)
-                .orElse("");
-        return note.displayName() + "    " + joinedTags;
+        if (isUploadedNote(note)) {
+            prefix.append("↑ ");
+        }
+        return prefix.toString();
+    }
+
+    private boolean isUploadedNote(Note note) {
+        if (note == null || note.path() == null || notesDir == null || currentView == DashboardView.TRASH) {
+            return false;
+        }
+        Path fileName = note.path().getFileName();
+        return fileName != null && RemoteNoteRegistry.get(notesDir, fileName.toString()).isPresent();
     }
 
     private boolean matchesTextQuery(Note note, String query) {
@@ -1410,8 +1456,11 @@ public class DashboardController implements Initializable {
         grid.add(tagField, 1, 0);
 
         dialog.getDialogPane().setContent(grid);
+        dialog.getDialogPane().applyCss();
         Button addButton = (Button) dialog.getDialogPane().lookupButton(addButtonType);
-        addButton.disableProperty().bind(tagField.textProperty().isEmpty());
+        if (addButton != null) {
+            addButton.disableProperty().bind(tagField.textProperty().isEmpty());
+        }
 
         Platform.runLater(tagField::requestFocus);
 

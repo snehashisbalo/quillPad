@@ -1,7 +1,9 @@
 package org.openjfx;
 
 import javafx.scene.Scene;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class ThemeManager {
@@ -23,7 +25,7 @@ public class ThemeManager {
     }
 
     private static Theme currentTheme;
-    private static final List<Scene> registeredScenes = new ArrayList<>();
+    private static final List<WeakReference<Scene>> registeredScenes = new ArrayList<>();
 
     static {
         currentTheme = SettingsManager.getSavedTheme();
@@ -32,8 +34,12 @@ public class ThemeManager {
     public static void setTheme(Theme theme) {
         currentTheme = theme;
         SettingsManager.setTheme(theme);
-        for (Scene scene : registeredScenes) {
-            applyThemeToScene(scene);
+        pruneRegisteredScenes();
+        for (WeakReference<Scene> ref : registeredScenes) {
+            Scene scene = ref.get();
+            if (scene != null) {
+                applyThemeToScene(scene);
+            }
         }
     }
     
@@ -42,10 +48,18 @@ public class ThemeManager {
     }
     
     public static void registerScene(Scene scene) {
-        if (!registeredScenes.contains(scene)) {
-            registeredScenes.add(scene);
-            applyThemeToScene(scene);
+        if (scene == null) {
+            return;
         }
+        pruneRegisteredScenes();
+        for (WeakReference<Scene> ref : registeredScenes) {
+            if (ref.get() == scene) {
+                applyThemeToScene(scene);
+                return;
+            }
+        }
+        registeredScenes.add(new WeakReference<>(scene));
+        applyThemeToScene(scene);
     }
     
     public static void applyThemeToScene(Scene scene) {
@@ -53,12 +67,16 @@ public class ThemeManager {
 
         scene.getStylesheets().clear();
 
-        String baseStyles = ThemeManager.class.getResource("styles.css").toExternalForm();
-        scene.getStylesheets().add(baseStyles);
+        String baseStyles = resolveStylesheet("styles.css");
+        if (baseStyles != null) {
+            scene.getStylesheets().add(baseStyles);
+        }
 
         if (currentTheme == Theme.DARK) {
-            String darkStyles = ThemeManager.class.getResource("dark-theme.css").toExternalForm();
-            scene.getStylesheets().add(darkStyles);
+            String darkStyles = resolveStylesheet("dark-theme.css");
+            if (darkStyles != null) {
+                scene.getStylesheets().add(darkStyles);
+            }
         }
 
         scene.getRoot().getStyleClass().removeAll(
@@ -78,5 +96,23 @@ public class ThemeManager {
             case DARK: return "🌙";
             default: return "🎨";
         }
+    }
+
+    private static void pruneRegisteredScenes() {
+        Iterator<WeakReference<Scene>> iterator = registeredScenes.iterator();
+        while (iterator.hasNext()) {
+            if (iterator.next().get() == null) {
+                iterator.remove();
+            }
+        }
+    }
+
+    private static String resolveStylesheet(String resourceName) {
+        var resource = ThemeManager.class.getResource(resourceName);
+        if (resource == null) {
+            System.err.println("Missing theme stylesheet: " + resourceName);
+            return null;
+        }
+        return resource.toExternalForm();
     }
 }

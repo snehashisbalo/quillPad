@@ -2,7 +2,7 @@ package org.openjfx.component;
 
 import org.fxmisc.richtext.InlineCssTextArea;
 import org.openjfx.ThemeManager;
-import org.quillpad.collab.Document;
+import org.openjfx.model.StyledDocument;
 
 import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
@@ -34,6 +34,8 @@ public class RichTextEditor extends StackPane {
     private String documentName;
     private String filePath;
     private boolean modified;
+    private ListChangeListener<String> themeListener;
+    private Parent themeListenerRoot;
 
     private Language currentLanguage = Language.PLAIN_TEXT;
     private boolean syntaxHighlightingEnabled = true;
@@ -156,7 +158,10 @@ public class RichTextEditor extends StackPane {
         textArea.getStyleClass().add("rich-editor-area");
         textArea.setWrapText(true);
         textArea.setUseInitialStyleForInsertion(false);
-        sceneProperty().addListener((obs, oldScene, newScene) -> attachThemeListeners(newScene));
+        sceneProperty().addListener((obs, oldScene, newScene) -> {
+            detachThemeListener();
+            attachThemeListeners(newScene);
+        });
         applyEditorStyle();
         setupTypingAssists();
 
@@ -242,6 +247,9 @@ public class RichTextEditor extends StackPane {
     private void insertPair(String open, String close, boolean hasSelection) {
         if (hasSelection) {
             String selected = textArea.getSelectedText();
+            if (selected == null) {
+                selected = "";
+            }
             int start = textArea.getSelection().getStart();
             textArea.replaceSelection(open + selected + close);
             textArea.selectRange(start + 1, start + 1 + selected.length());
@@ -295,6 +303,7 @@ public class RichTextEditor extends StackPane {
             textArea.insertText(caret, "\n" + indentForNewLine);
             textArea.moveTo(caret + 1 + indentForNewLine.length());
         }
+        textArea.requestFollowCaret();
 
         event.consume();
     }
@@ -347,6 +356,30 @@ public class RichTextEditor extends StackPane {
         }
     }
 
+    public boolean replaceAt(int start, int end, String replacement) {
+        int docLen = textArea.getLength();
+        if (start < 0 || end > docLen || end < start) {
+            return false;
+        }
+        String style = "";
+        try {
+            int stylePos = Math.min(start, Math.max(0, docLen - 1));
+            String resolved = textArea.getStyleAtPosition(stylePos);
+            style = resolved == null ? "" : resolved;
+        } catch (Exception ignored) {
+        }
+        try {
+            textArea.replace(start, end, replacement == null ? "" : replacement, style);
+        } catch (Exception ex) {
+            textArea.replaceText(start, end, replacement == null ? "" : replacement);
+        }
+        modified = true;
+        if (syntaxHighlightingEnabled) {
+            applySyntaxHighlightingDelayed();
+        }
+        return true;
+    }
+
     public int replaceAll(String findText, String replaceText) {
         if (findText == null || findText.isEmpty()) {
             return 0;
@@ -373,9 +406,34 @@ public class RichTextEditor extends StackPane {
 
         for (int i = matches.size() - 1; i >= 0; i--) {
             int start = matches.get(i);
-            int end = start + findText.length();
-            String style = textArea.getStyleAtPosition(Math.min(start, Math.max(0, textArea.getLength() - 1)));
-            textArea.replace(start, end, replacement, style == null ? "" : style);
+            int currentLen = textArea.getLength();
+            if (currentLen <= 0) {
+                break;
+            }
+            if (start < 0 || start > currentLen) {
+                continue;
+            }
+
+            int end = Math.min(start + findText.length(), currentLen);
+            if (end < start) {
+                continue;
+            }
+
+            String style = "";
+            try {
+                int stylePos = Math.min(start, Math.max(0, currentLen - 1));
+                String resolved = textArea.getStyleAtPosition(stylePos);
+                style = resolved == null ? "" : resolved;
+            } catch (Exception ignored) {
+                style = "";
+            }
+
+            try {
+                textArea.replace(start, end, replacement, style);
+            } catch (Exception ex) {
+                // Fall back to plain replace to avoid crashing the UI action.
+                textArea.replaceText(start, end, replacement);
+            }
         }
 
         textArea.moveTo(Math.min(caretPosition, textArea.getLength()));
@@ -418,8 +476,18 @@ public class RichTextEditor extends StackPane {
             return;
         }
         Parent root = scene.getRoot();
-        root.getStyleClass().addListener((ListChangeListener<String>) change -> updateThemePalette());
+        themeListenerRoot = root;
+        themeListener = change -> updateThemePalette();
+        root.getStyleClass().addListener(themeListener);
         updateThemePalette();
+    }
+
+    private void detachThemeListener() {
+        if (themeListenerRoot != null && themeListener != null) {
+            themeListenerRoot.getStyleClass().removeListener(themeListener);
+        }
+        themeListenerRoot = null;
+        themeListener = null;
     }
 
     private void updateThemePalette() {
@@ -730,17 +798,17 @@ public class RichTextEditor extends StackPane {
         textArea.replaceSelection(replacement);
     }
 
-    public Document toDocument() {
-        Document doc = new Document(documentId, documentName, null);
+    public StyledDocument toDocument() {
+        StyledDocument doc = new StyledDocument(documentId, documentName, null);
         doc.setPlainText(textArea.getText());
 
-        java.util.List<Document.StyleSegment> segments = new java.util.ArrayList<>();
+        java.util.List<StyledDocument.StyleSegment> segments = new java.util.ArrayList<>();
         org.fxmisc.richtext.model.StyleSpans<String> spans = textArea.getStyleSpans(0, textArea.getLength());
 
         int start = 0;
         for (org.fxmisc.richtext.model.StyleSpan<String> span : spans) {
             if (span.getLength() > 0) {
-                Document.StyleSegment segment = new Document.StyleSegment(start, span.getLength());
+                StyledDocument.StyleSegment segment = new StyledDocument.StyleSegment(start, span.getLength());
                 String style = span.getStyle();
                 parseStyleToSegment(style, segment);
                 segments.add(segment);
@@ -752,14 +820,14 @@ public class RichTextEditor extends StackPane {
         return doc;
     }
 
-    public void fromDocument(Document doc) {
+    public void fromDocument(StyledDocument doc) {
         textArea.replaceText(doc.getPlainText() == null ? "" : doc.getPlainText());
 
         this.documentId = doc.getDocumentId();
         this.documentName = doc.getDocumentName();
 
         if (doc.getStyleSegments() != null && !doc.getStyleSegments().isEmpty()) {
-            for (Document.StyleSegment segment : doc.getStyleSegments()) {
+            for (StyledDocument.StyleSegment segment : doc.getStyleSegments()) {
                 String style = segment.toCss();
                 if (!style.isEmpty()) {
                     textArea.setStyle(segment.getStart(), segment.getStart() + segment.getLength(), style);
@@ -773,7 +841,7 @@ public class RichTextEditor extends StackPane {
         modified = false;
     }
 
-    private void parseStyleToSegment(String style, Document.StyleSegment segment) {
+    private void parseStyleToSegment(String style, StyledDocument.StyleSegment segment) {
         if (style.contains("-fx-font-family:")) {
             java.util.regex.Matcher m = java.util.regex.Pattern.compile("-fx-font-family: \"([^\"]+)\";").matcher(style);
             if (m.find()) segment.setFontFamily(m.group(1));
@@ -949,51 +1017,58 @@ public class RichTextEditor extends StackPane {
     }
 
     private void applySyntaxHighlighting() {
-        if (!syntaxHighlightingEnabled || currentLanguage == Language.PLAIN_TEXT) {
-            return;
-        }
-
-        String text = textArea.getText();
-        if (text == null || text.isEmpty()) {
-            return;
-        }
-
-        StringBuilder combined = new StringBuilder();
-        combined.append("(?<KEYWORD>").append(keywordPattern.pattern()).append(")");
-        combined.append("|(?<TYPE>").append(typePattern.pattern()).append(")");
-        combined.append("|(?<COMMENT>").append(commentPattern.pattern()).append(")");
-        combined.append("|(?<STRING>").append(stringPattern.pattern()).append(")");
-        combined.append("|(?<NUMBER>").append(numberPattern.pattern()).append(")");
-        combined.append("|(?<TAG>").append(tagPattern.pattern()).append(")");
-        combined.append("|(?<PREPROC>").append(preprocessorPattern.pattern()).append(")");
-
-        final Pattern combinedPattern;
         try {
-            combinedPattern = Pattern.compile(combined.toString(), Pattern.MULTILINE | Pattern.DOTALL);
+            if (!syntaxHighlightingEnabled || currentLanguage == Language.PLAIN_TEXT) {
+                return;
+            }
+
+            String text = textArea.getText();
+            if (text == null || text.isEmpty()) {
+                return;
+            }
+
+            StringBuilder combined = new StringBuilder();
+            combined.append("(?<KEYWORD>").append(keywordPattern.pattern()).append(")");
+            combined.append("|(?<TYPE>").append(typePattern.pattern()).append(")");
+            combined.append("|(?<COMMENT>").append(commentPattern.pattern()).append(")");
+            combined.append("|(?<STRING>").append(stringPattern.pattern()).append(")");
+            combined.append("|(?<NUMBER>").append(numberPattern.pattern()).append(")");
+            combined.append("|(?<TAG>").append(tagPattern.pattern()).append(")");
+            combined.append("|(?<PREPROC>").append(preprocessorPattern.pattern()).append(")");
+
+            final Pattern combinedPattern;
+            try {
+                combinedPattern = Pattern.compile(combined.toString(), Pattern.MULTILINE | Pattern.DOTALL);
+            } catch (Exception ignored) {
+                return;
+            }
+
+            Matcher matcher = combinedPattern.matcher(text);
+            int lastEnd = 0;
+
+            while (matcher.find()) {
+                int start = matcher.start();
+                int end = matcher.end();
+                if (start < 0 || end < 0 || start > end || end > text.length()) {
+                    continue;
+                }
+                String style = getStyleForMatch(matcher);
+                if (style == null) {
+                    continue;
+                }
+
+                if (start > lastEnd) {
+                    textArea.setStyle(lastEnd, start, "");
+                }
+                textArea.setStyle(start, end, style);
+                lastEnd = end;
+            }
+
+            if (lastEnd < text.length()) {
+                textArea.setStyle(lastEnd, text.length(), "");
+            }
         } catch (Exception ignored) {
-            return;
-        }
-
-        Matcher matcher = combinedPattern.matcher(text);
-        int lastEnd = 0;
-
-        while (matcher.find()) {
-            int start = matcher.start();
-            int end = matcher.end();
-            String style = getStyleForMatch(matcher);
-            if (style == null) {
-                continue;
-            }
-
-            if (start > lastEnd) {
-                textArea.setStyle(lastEnd, start, "");
-            }
-            textArea.setStyle(start, end, style);
-            lastEnd = end;
-        }
-
-        if (lastEnd < text.length()) {
-            textArea.setStyle(lastEnd, text.length(), "");
+            // Avoid crashing the UI thread due to styling edge cases.
         }
     }
 

@@ -44,7 +44,7 @@ A production-grade JavaFX IDE with comprehensive features for software developme
 | Paste | Ctrl+V |
 | Select All | Ctrl+A |
 | Find | Ctrl+F |
-| Find/Replace | Ctrl+H |
+| Find/Replace | Ctrl+Alt+F |
 | Zoom In | Ctrl++ |
 | Zoom Out | Ctrl+- |
 | Reset Zoom | Ctrl+0 |

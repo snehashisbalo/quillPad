@@ -29,10 +29,8 @@ public class QuillPad extends Application {
         this.primaryStage = stage;
         stage.setTitle("QuillPad");
 
-        // Load login scene
         loadLoginScene();
 
-        // Set minimum size
         stage.setMinWidth(600);
         stage.setMinHeight(400);
 

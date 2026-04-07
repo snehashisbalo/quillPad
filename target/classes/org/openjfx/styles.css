@@ -47,6 +47,11 @@
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 3);
 }
 
+.login-left-panel .app-title {
+    -fx-text-fill: white;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.45), 10, 0, 0, 3);
+}
+
 .app-wordmark {
     -fx-font-family: "Orbitron", "Segoe UI", sans-serif;
     -fx-font-weight: bold;
@@ -309,12 +314,46 @@
     -fx-padding: 12;
 }
 
+.note-row {
+    -fx-alignment: CENTER_LEFT;
+}
+
+.note-title-label {
+    -fx-text-fill: #2C3E50;
+    -fx-font-size: 14px;
+}
+
+.note-tag-pane {
+    -fx-alignment: CENTER_RIGHT;
+}
+
+.tag-chip {
+    -fx-background-color: #E2F3E8;
+    -fx-border-color: #5B9B74;
+    -fx-border-radius: 999;
+    -fx-background-radius: 999;
+    -fx-padding: 4 10;
+    -fx-text-fill: #2E6A46;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
 .notes-list .list-cell:hover {
     -fx-background-color: #E8F4F8;
 }
 
 .notes-list .list-cell:selected {
     -fx-background-color: #4A90E2;
+    -fx-text-fill: white;
+}
+
+.notes-list .list-cell:selected .note-title-label {
+    -fx-text-fill: white;
+}
+
+.notes-list .list-cell:selected .tag-chip {
+    -fx-background-color: rgba(255, 255, 255, 0.18);
+    -fx-border-color: rgba(255, 255, 255, 0.72);
     -fx-text-fill: white;
 }
 
@@ -332,6 +371,44 @@
 .icon-button:hover {
     -fx-background-color: #4A90E2;
     -fx-text-fill: white;
+}
+
+.tag-chip-button {
+    -fx-background-color: #D8F3DC;
+    -fx-text-fill: #1B5E20;
+    -fx-cursor: hand;
+    -fx-background-radius: 999;
+    -fx-border-color: #2E7D32;
+    -fx-border-width: 1;
+    -fx-border-radius: 999;
+    -fx-padding: 5 10;
+    -fx-font-weight: bold;
+}
+
+.tag-chip-button:hover {
+    -fx-background-color: #2E7D32;
+    -fx-text-fill: white;
+}
+
+.light-theme .formatting-toolbar .tag-chip-button {
+    -fx-background-color: #D8F3DC;
+    -fx-text-fill: #1B5E20;
+    -fx-border-color: #2E7D32;
+    -fx-border-radius: 999;
+    -fx-background-radius: 999;
+}
+
+.light-theme .formatting-toolbar .tag-chip-button:hover {
+    -fx-background-color: #2E7D32;
+    -fx-text-fill: white;
+}
+
+.light-theme .formatting-toolbar .tag-chip-button .text {
+    -fx-fill: #1B5E20;
+}
+
+.light-theme .formatting-toolbar .tag-chip-button:hover .text {
+    -fx-fill: white;
 }
 
 .delete-button {
@@ -672,6 +749,11 @@
     -fx-border-insets: 0;
     -fx-focus-color: transparent;
     -fx-faint-focus-color: transparent;
+}
+
+.light-theme .login-right-panel .form-container .app-title {
+    -fx-text-fill: black;
+    -fx-effect: null;
 }
 
 .light-theme .form-input {

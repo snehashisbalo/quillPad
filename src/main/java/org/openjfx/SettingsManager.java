@@ -183,7 +183,6 @@ public class SettingsManager {
         saveSettings();
     }
 
-    // Starred notes
     public static Set<String> getStarredNotes() {
         String raw = settings.getProperty("starred.notes", DEFAULT_STARRED_NOTES);
         Set<String> notes = new LinkedHashSet<>();

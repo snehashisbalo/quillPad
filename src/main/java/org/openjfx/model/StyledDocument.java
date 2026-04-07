@@ -1,12 +1,12 @@
-package org.quillpad.collab;
+package org.openjfx.model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Document implements Serializable {
+public class StyledDocument implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+
     private String documentId;
     private String documentName;
     private String plainText;
@@ -14,82 +14,82 @@ public class Document implements Serializable {
     private String owner;
     private long lastModified;
     private int version;
-    
-    public Document() {
+
+    public StyledDocument() {
         this.styleSegments = new ArrayList<>();
         this.plainText = "";
         this.version = 0;
         this.lastModified = System.currentTimeMillis();
     }
-    
-    public Document(String documentId, String documentName, String owner) {
+
+    public StyledDocument(String documentId, String documentName, String owner) {
         this();
         this.documentId = documentId;
         this.documentName = documentName;
         this.owner = owner;
     }
-    
+
     public String getDocumentId() {
         return documentId;
     }
-    
+
     public void setDocumentId(String documentId) {
         this.documentId = documentId;
     }
-    
+
     public String getDocumentName() {
         return documentName;
     }
-    
+
     public void setDocumentName(String documentName) {
         this.documentName = documentName;
     }
-    
+
     public String getPlainText() {
         return plainText;
     }
-    
+
     public void setPlainText(String plainText) {
         this.plainText = plainText;
         this.lastModified = System.currentTimeMillis();
         this.version++;
     }
-    
+
     public List<StyleSegment> getStyleSegments() {
         return styleSegments;
     }
-    
+
     public void setStyleSegments(List<StyleSegment> styleSegments) {
         this.styleSegments = styleSegments;
     }
-    
+
     public String getOwner() {
         return owner;
     }
-    
+
     public void setOwner(String owner) {
         this.owner = owner;
     }
-    
+
     public long getLastModified() {
         return lastModified;
     }
-    
+
     public void setLastModified(long lastModified) {
         this.lastModified = lastModified;
     }
-    
+
     public int getVersion() {
         return version;
     }
-    
+
     public void setVersion(int version) {
         this.version = version;
     }
-    
+
     public static class StyleSegment implements Serializable {
         private static final long serialVersionUID = 1L;
-        
+
         private int start;
         private int length;
         private String fontFamily;
@@ -100,14 +100,14 @@ public class Document implements Serializable {
         private boolean strikethrough;
         private String textColor;
         private String backgroundColor;
-        
+
         public StyleSegment() {}
-        
+
         public StyleSegment(int start, int length) {
             this.start = start;
             this.length = length;
         }
-        
+
         public int getStart() { return start; }
         public void setStart(int start) { this.start = start; }
         public int getLength() { return length; }
@@ -128,7 +128,7 @@ public class Document implements Serializable {
         public void setTextColor(String textColor) { this.textColor = textColor; }
         public String getBackgroundColor() { return backgroundColor; }
         public void setBackgroundColor(String backgroundColor) { this.backgroundColor = backgroundColor; }
-        
+
         public String toCss() {
             StringBuilder css = new StringBuilder();
             if (fontFamily != null && !fontFamily.isEmpty()) {
