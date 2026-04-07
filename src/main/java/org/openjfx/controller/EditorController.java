@@ -1536,7 +1536,6 @@ public class EditorController implements Initializable {
                 int start = matches.get(currentMatchIndex[0]);
                 int end = start + query.length();
                 if (editor.replaceAt(start, end, replacement)) {
-                    // Recalculate matches after the edit and advance to next
                     matches.clear();
                     currentMatchIndex[0] = -1;
                     matches.addAll(findAllMatches(editor.getText(), query));
@@ -1544,7 +1543,6 @@ public class EditorController implements Initializable {
                         statusLabel.setText("No more occurrences");
                         editor.clearSelection();
                     } else {
-                        // Find the match at or after the replacement end
                         int nextPos = start + replacement.length();
                         currentMatchIndex[0] = 0;
                         for (int i = 0; i < matches.size(); i++) {
@@ -1631,8 +1629,7 @@ public class EditorController implements Initializable {
         }
     }
 
-    /** Returns the current font size of the editor, reading from its inline style if set. */
-    private double currentEditorFontSize(RichTextEditor editor) {
+private double currentEditorFontSize(RichTextEditor editor) {
         java.util.regex.Matcher matcher = java.util.regex.Pattern
                 .compile("-fx-font-size: ([0-9.]+)px;")
                 .matcher(editor.getTextArea().getStyle());

@@ -57,7 +57,6 @@ public class LoginController implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        // Setup password field sync
         passwordField.textProperty().addListener((obs, oldVal, newVal) -> {
             passwordTextField.setText(newVal);
         });
@@ -65,12 +64,10 @@ public class LoginController implements Initializable {
             passwordField.setText(newVal);
         });
 
-        // Setup key handlers
         passwordField.setOnKeyPressed(this::handleKeyPress);
         passwordTextField.setOnKeyPressed(this::handleKeyPress);
         usernameField.setOnKeyPressed(this::handleKeyPress);
 
-        // Clear error on input
         usernameField.textProperty().addListener((obs, old, newVal) -> {
             if (errorLabel != null) {
                 errorLabel.setText("");
@@ -83,10 +80,8 @@ public class LoginController implements Initializable {
             }
         });
 
-        // Initialize theme button
         updateThemeButton();
 
-        // Bind responsive fonts when scene is available
         usernameField.sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene != null) {
                 setupResponsiveFonts(newScene);
@@ -95,7 +90,6 @@ public class LoginController implements Initializable {
     }
 
     private void setupResponsiveFonts(Scene scene) {
-        // Bind font sizes to scene width
         if (appTitleLabel != null) {
             appTitleLabel.styleProperty().bind(
                 Bindings.concat("-fx-font-size: ", 

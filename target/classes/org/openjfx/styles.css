@@ -1,8 +1,6 @@
-/* ===========================
-   QuillPad Base Styles
-   =========================== */
 
-/* Root Variables - Default (Light) Theme */
+
+
 .root {
     -fx-primary-color: #4A90E2;
     -fx-primary-dark: #357ABD;
@@ -14,16 +12,14 @@
     -fx-border-color: #D0D7DE;
     -fx-hover-color: #E8F4F8;
     
-    /* Input field colors */
+    
     -fx-input-bg: #ffffff;
     -fx-input-text: #2C3E50;
     -fx-input-prompt: #95A5A6;
     -fx-input-border: #D0D7DE;
 }
 
-/* ===========================
-   Login Screen
-   =========================== */
+
 
 .login-container {
     -fx-background-color: linear-gradient(to bottom right, rgba(9, 13, 20, 0.48), rgba(17, 22, 30, 0.72));
@@ -78,13 +74,13 @@
     -fx-font-size: 13px;
 }
 
-/* Input Fields */
+
 .input-field-container {
     -fx-background-color: -fx-input-bg;
     -fx-border-color: -fx-input-border;
-    /*-fx-border-radius: 20;*/
-    /*-fx-background-radius: 20;*/
-    /*-fx-padding: 5 15;*/
+    
+    
+    
     -fx-padding: 0 0;
     -fx-spacing: 10;
 }
@@ -169,9 +165,7 @@
     -fx-text-fill: -fx-primary-color;
 }
 
-/* ===========================
-   Dashboard
-   =========================== */
+
 
 .dashboard-container {
     -fx-background-color: #F5F7FA;
@@ -432,9 +426,7 @@
     -fx-cursor: default;
 }
 
-/* ===========================
-   Editor
-   =========================== */
+
 
 .editor-container {
     -fx-background-color: #FFFFFF;
@@ -585,9 +577,7 @@
     -fx-font-size: 11px;
 }
 
-/* ===========================
-   Dialogs and Alerts
-   =========================== */
+
 
 .dialog-pane {
     -fx-background-color: white;
@@ -621,9 +611,7 @@
     -fx-background-color: #7F8C8D;
 }
 
-/* ===========================
-   Theme Toggle Button
-   =========================== */
+
 
 .theme-toggle-button {
     -fx-background-color: rgba(255, 255, 255, 0.2);
@@ -685,9 +673,7 @@
     -fx-font-weight: bold;
 }
 
-/* ===========================
-   Scrollbars
-   =========================== */
+
 
 .scroll-bar {
     -fx-background-color: transparent;
@@ -706,9 +692,7 @@
     -fx-background-color: transparent;
 }
 
-/* ===========================
-   Separator
-   =========================== */
+
 
 .separator {
     -fx-background-color: #E1E8ED;
@@ -718,11 +702,9 @@
     -fx-border-color: #E1E8ED;
 }
 
-/* ===========================
-   Responsive Design Helpers
-   =========================== */
 
-/* Ensure containers grow/shrink properly */
+
+
 .vbox-grow {
     -fx-vgrow: ALWAYS;
 }
@@ -730,7 +712,7 @@
 .hbox-grow {
     -fx-hgrow: ALWAYS;
 }
-/* Input Fields - Light Theme Override */
+
 .light-theme .input-field-container {
     -fx-background-color: #ffffff;
     -fx-border-color: #D0D7DE;
@@ -782,7 +764,7 @@
     -fx-effect: dropshadow(gaussian, rgba(74, 144, 226, 0.35), 8, 0, 0, 0);
 }
 
-/* Light theme layout normalization to match other themes */
+
 .light-theme .menu-bar .menu-button {
     -fx-padding: 0 8 0 8;
 }
@@ -896,7 +878,7 @@
 }
 
 
-/* Remove white border from editor text area */
+
 .text-area {
     -fx-background-color: transparent;
     -fx-control-inner-background: transparent;
@@ -918,7 +900,7 @@
     -fx-border-insets: 0;
 }
 
-/* Editor TabPane - remove borders */
+
 .editor-tabs {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
@@ -929,7 +911,7 @@
     -fx-border-color: transparent;
 }
 
-/* Tab styling */
+
 .editor-tabs .tab {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
@@ -940,56 +922,54 @@
 }
 
 
-/* ===========================
-   Syntax Highlighting Styles
-   =========================== */
 
-/* Keyword styling */
+
+
 .keyword {
     -fx-fill: #0000FF;
     -fx-font-weight: bold;
 }
 
-/* String styling */
+
 .string {
     -fx-fill: #008000;
 }
 
-/* Comment styling */
+
 .comment {
     -fx-fill: #808080;
     -fx-font-style: italic;
 }
 
-/* Number styling */
+
 .number {
     -fx-fill: #FF0000;
 }
 
-/* Parentheses styling */
+
 .paren {
     -fx-fill: #666666;
     -fx-font-weight: bold;
 }
 
-/* Braces styling */
+
 .brace {
     -fx-fill: #666666;
     -fx-font-weight: bold;
 }
 
-/* Brackets styling */
+
 .bracket {
     -fx-fill: #666666;
     -fx-font-weight: bold;
 }
 
-/* Semicolon styling */
+
 .semicolon {
     -fx-fill: #666666;
 }
 
-/* Line numbers */
+
 .lineno {
     -fx-background-color: transparent;
     -fx-text-fill: #6c757d;

@@ -11,7 +11,6 @@ public class SettingsManager {
     private static final String SETTINGS_FILE = "quillpad.settings";
     private static Properties settings = new Properties();
     
-    // Default settings
     private static final String DEFAULT_FONT_FAMILY = "System";
     private static final String DEFAULT_FONT_SIZE = "14";
     private static final String DEFAULT_THEME = "DARK";
@@ -63,7 +62,6 @@ public class SettingsManager {
         saveSettings();
     }
     
-    // Font Family
     public static String getFontFamily() {
         return settings.getProperty("font.family", DEFAULT_FONT_FAMILY);
     }
@@ -73,7 +71,6 @@ public class SettingsManager {
         saveSettings();
     }
     
-    // Font Size
     public static int getFontSize() {
         try {
             return Integer.parseInt(settings.getProperty("font.size", DEFAULT_FONT_SIZE));
@@ -87,7 +84,6 @@ public class SettingsManager {
         saveSettings();
     }
     
-    // Theme
     public static ThemeManager.Theme getSavedTheme() {
         String themeName = settings.getProperty("theme", DEFAULT_THEME);
         try {
@@ -106,7 +102,6 @@ public class SettingsManager {
         return Font.font(getFontFamily(), getFontSize());
     }
 
-    // Network
     public static boolean isNetworkEnabled() {
         return Boolean.parseBoolean(settings.getProperty("network.enabled", DEFAULT_NETWORK_ENABLED));
     }

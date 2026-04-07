@@ -1,42 +1,40 @@
-/* ===========================
-   Dark Theme
-   =========================== */
+
 
 .dark-theme {
-    /* Base Colors */
+    
     -fx-dark-bg: #2d2d2d;
     -fx-dark-bg-light: #3c3c3c;
     -fx-dark-bg-lighter: #505050;
     
-    /* Text Colors */
+    
     -fx-dark-fg: #cccccc;
     -fx-dark-fg-dim: #969696;
     
-    /* Accent Colors */
+    
     -fx-dark-accent: #007acc;
     -fx-dark-accent-light: #0098ff;
     -fx-dark-red: #f44336;
     -fx-dark-green: #4caf50;
     -fx-dark-yellow: #ffeb3b;
     
-    /* Theme Application */
+    
     -fx-background-color: #1e1e1e;
     -fx-text-fill: -fx-dark-fg;
     
-    /* Primary Colors */
+    
     -fx-primary-color: -fx-dark-accent;
     -fx-primary-dark: -fx-dark-accent-light;
     -fx-secondary-color: -fx-dark-green;
     -fx-danger-color: -fx-dark-red;
     -fx-warning-color: -fx-dark-yellow;
     
-    /* Background Colors */
+    
     -fx-background: #1e1e1e;
     -fx-surface: -fx-dark-bg;
     -fx-overlay: -fx-dark-bg-light;
 }
 
-/* Login Screen - Dark */
+
 .dark-theme .login-container {
     -fx-background-color: linear-gradient(to bottom right, #1a1a1a 0%, #2d2d2d 100%);
 }
@@ -105,7 +103,7 @@
     -fx-text-fill: #f44336;
 }
 
-/* Dashboard - Dark */
+
 .dark-theme .dashboard-container {
     -fx-background-color: #1e1e1e;
 }
@@ -295,7 +293,7 @@
     -fx-text-fill: white;
 }
 
-/* Editor - Dark */
+
 .dark-theme .editor-container {
     -fx-background-color: #1e1e1e;
 }
@@ -490,7 +488,7 @@
     -fx-text-fill: rgba(255, 255, 255, 0.8);
 }
 
-/* Theme Toggle Button */
+
 .dark-theme .theme-toggle-button {
     -fx-background-color: #3c3c3c;
     -fx-text-fill: #ffffff;
@@ -520,7 +518,7 @@
     -fx-padding: 0;
     -fx-alignment: CENTER;
 }
-/* Input Fields - Dark */
+
 .dark-theme .input-field-container {
     -fx-background-color: #505050;
     -fx-border-color: #606060;

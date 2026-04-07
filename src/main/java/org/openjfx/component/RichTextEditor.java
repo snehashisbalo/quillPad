@@ -431,7 +431,6 @@ public class RichTextEditor extends StackPane {
             try {
                 textArea.replace(start, end, replacement, style);
             } catch (Exception ex) {
-                // Fall back to plain replace to avoid crashing the UI action.
                 textArea.replaceText(start, end, replacement);
             }
         }
@@ -1068,7 +1067,6 @@ public class RichTextEditor extends StackPane {
                 textArea.setStyle(lastEnd, text.length(), "");
             }
         } catch (Exception ignored) {
-            // Avoid crashing the UI thread due to styling edge cases.
         }
     }
 
