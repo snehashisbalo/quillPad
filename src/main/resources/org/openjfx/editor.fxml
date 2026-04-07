@@ -52,6 +52,13 @@
                         </items>
                     </Menu>
 
+                    <Menu text="Tags">
+                        <items>
+                            <MenuItem fx:id="addTagMenuItem" text="Add Tag..."/>
+                            <MenuItem fx:id="manageTagMenuItem" text="Manage Tags..."/>
+                        </items>
+                    </Menu>
+
                     <Menu text="Help">
                         <items>
                             <MenuItem fx:id="aboutMenuItem" text="About QuillPad"/>
@@ -61,20 +68,23 @@
             </MenuBar>
 
             <ToolBar fx:id="formattingToolBar" styleClass="formatting-toolbar">
-                <Region HBox.hgrow="ALWAYS"/>
+                <Label text="Tags:" styleClass="toolbar-label"/>
+                <HBox fx:id="tagChipPane" spacing="6" alignment="CENTER_LEFT"/>
+
+                <Separator orientation="VERTICAL"/>
 
                 <Label text="Font:" styleClass="toolbar-label"/>
                 <ComboBox fx:id="fontFamilyCombo" prefWidth="120"/>
-                
+
                 <Label text="Size:" styleClass="toolbar-label">
                     <padding>
                         <Insets left="10"/>
                     </padding>
                 </Label>
                 <ComboBox fx:id="fontSizeCombo" prefWidth="70"/>
-                
+
                 <Separator orientation="VERTICAL"/>
-                
+
                 <ToggleButton fx:id="boldButton" text="B" styleClass="bold-button">
                     <tooltip>
                         <Tooltip text="Bold (Ctrl+B)"/>
@@ -95,9 +105,9 @@
                         <Tooltip text="Strikethrough"/>
                     </tooltip>
                 </ToggleButton>
-                
+
                 <Separator orientation="VERTICAL"/>
-                
+
                 <Label text="Text:" styleClass="toolbar-label"/>
                 <ColorPicker fx:id="textColorPicker" styleClass="text-color-picker">
                     <tooltip>

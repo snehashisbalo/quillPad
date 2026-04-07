@@ -678,6 +678,28 @@ public class RichTextEditor extends StackPane {
         return getStyleAtCaretOrSelection().contains("-fx-strikethrough: true;");
     }
 
+    public String getCurrentFontFamily() {
+        String style = getStyleAtCaretOrSelection();
+        if (style != null && style.contains("-fx-font-family:")) {
+            Matcher matcher = Pattern.compile("-fx-font-family: \"([^\"]+)\";").matcher(style);
+            if (matcher.find()) {
+                return matcher.group(1);
+            }
+        }
+        return fontFamily;
+    }
+
+    public int getCurrentFontSize() {
+        String style = getStyleAtCaretOrSelection();
+        if (style != null && style.contains("-fx-font-size:")) {
+            Matcher matcher = Pattern.compile("-fx-font-size: ([0-9.]+)px;").matcher(style);
+            if (matcher.find()) {
+                return (int) Math.round(Double.parseDouble(matcher.group(1)));
+            }
+        }
+        return (int) Math.round(fontSize);
+    }
+
     private String getStyleAtCaretOrSelection() {
         javafx.scene.control.IndexRange selection = textArea.getSelection();
         if (selection.getLength() > 0 && textArea.getLength() > 0) {

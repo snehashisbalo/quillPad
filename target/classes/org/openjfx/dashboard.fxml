@@ -10,14 +10,12 @@
             fx:controller="org.openjfx.controller.DashboardController"
             styleClass="dashboard-container">
 
-    <!-- Left Sidebar -->
     <left>
         <VBox styleClass="sidebar" prefWidth="240" spacing="5">
             <padding>
                 <Insets top="20" right="15" bottom="20" left="15"/>
             </padding>
             <children>
-                <!-- New Note Button -->
                 <Button fx:id="newProjectButton"
                         text="+ New Note"
                         styleClass="create-button, primary-button"
@@ -46,7 +44,6 @@
                     </VBox.margin>
                 </Separator>
 
-                <!-- Navigation Items -->
                 <HBox fx:id="homeNavItem" styleClass="sidebar-btn-text" onMouseClicked="#handleMyNotes">
                     <children>
                         <Label text="🏠" style="-fx-font-size: 16px;"/>
@@ -91,7 +88,6 @@
 
                 <Region VBox.vgrow="ALWAYS"/>
 
-                <!-- Settings Button -->
                 <Button fx:id="settingsButton"
                         text="⚙️ Settings"
                         styleClass="sidebar-button"
@@ -114,7 +110,6 @@
                     </VBox.margin>
                 </Button>
 
-                <!-- Theme Toggle Button -->
                 <Button fx:id="themeToggleButton"
                         text="🌸 Theme"
                         styleClass="sidebar-button"
@@ -126,7 +121,6 @@
                     </VBox.margin>
                 </Button>
 
-                <!-- Logout Button -->
                 <Button fx:id="logoutButton"
                         text="🚪 Logout"
                         styleClass="sidebar-button, logout-button"
@@ -137,14 +131,12 @@
         </VBox>
     </left>
 
-    <!-- Center Content -->
     <center>
         <VBox spacing="15">
             <padding>
                 <Insets top="20" right="20" bottom="20" left="20"/>
             </padding>
             <children>
-                <!-- Header -->
                 <HBox alignment="CENTER_LEFT" spacing="15">
                     <children>
                         <Label text="📝" style="-fx-font-size: 28px;"/>
@@ -156,8 +148,13 @@
 
                         <Region HBox.hgrow="ALWAYS"/>
 
+                        <ToggleButton fx:id="manageTagsButton"
+                                      text="🏷 Tags"
+                                      onAction="#handleManageTags"
+                                      styleClass="icon-button"/>
+
                         <TextField fx:id="searchField"
-                                   promptText="🔍 Search notes..."
+                                   promptText="🔍 Search notes or #tags..."
                                    prefWidth="250"
                                    styleClass="search-field"/>
 
@@ -171,7 +168,6 @@
 
                 <Separator/>
 
-                <!-- Recent Notes Section -->
                 <HBox alignment="CENTER_LEFT">
                     <children>
                         <Label text="Recent Notes" styleClass="section-title">
@@ -220,13 +216,11 @@
                     </children>
                 </HBox>
 
-                <!-- Notes List -->
                 <ListView fx:id="recentProjectsList"
                           styleClass="notes-list"
                           onMouseClicked="#handleProjectSelected"
                           VBox.vgrow="ALWAYS"/>
 
-                <!-- Action Buttons -->
                 <HBox spacing="10" alignment="CENTER">
                     <Button fx:id="deleteButton"
                             text="🗑️ Delete Selected"

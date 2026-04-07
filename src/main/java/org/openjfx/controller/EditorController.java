@@ -3,6 +3,7 @@ package org.openjfx.controller;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -12,16 +13,21 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
+import org.openjfx.AppConstants;
 import org.openjfx.QuillPad;
 import org.openjfx.RemoteNoteRegistry;
 import org.openjfx.SettingsManager;
 import org.openjfx.ThemeManager;
 import org.openjfx.component.RichTextEditor;
+import org.openjfx.model.Tag;
 import org.openjfx.network.NetworkSyncService;
+import org.openjfx.service.NoteTagService;
+import org.openjfx.service.NoteService;
 
 import java.io.*;
 import java.net.URL;
@@ -33,7 +39,6 @@ import java.util.Timer;
 import java.util.Base64;
 
 public class EditorController implements Initializable {
-    private static final String STYLED_DOC_HEADER = "QPAD-DOC-1";
 
     @FXML private TabPane tabPane;
     @FXML private Label lineLabel;
@@ -56,6 +61,8 @@ public class EditorController implements Initializable {
     @FXML private MenuItem selectAllMenuItem;
     @FXML private MenuItem findMenuItem;
     @FXML private MenuItem replaceMenuItem;
+    @FXML private MenuItem addTagMenuItem;
+    @FXML private MenuItem manageTagMenuItem;
     @FXML private CheckMenuItem wordWrapMenuItem;
     @FXML private MenuItem aboutMenuItem;
     @FXML private MenuItem increaseFontMenuItem;
@@ -70,8 +77,11 @@ public class EditorController implements Initializable {
     @FXML private ToggleButton strikethroughButton;
     @FXML private ColorPicker textColorPicker;
     @FXML private Button themeToggleButton;
+    @FXML private HBox tagChipPane;
 
     private QuillPad mainApp;
+    private final NoteService noteService = new NoteService();
+    private final NoteTagService noteTagService = new NoteTagService();
     private String currentUser;
     private String currentNoteName;
     private Map<Tab, RichTextEditor> tabEditorMap = new HashMap<>();
@@ -83,6 +93,7 @@ public class EditorController implements Initializable {
     private Timer autoSaveTimer;
     private Timer remoteAutoSaveTimer;
     private int untitledCounter = 1;
+    private boolean updatingToolbarState;
 
     private static final String[] FONT_FAMILIES = {
         "System", "Arial", "Times New Roman", "Courier New", "Consolas", 
@@ -101,7 +112,7 @@ public class EditorController implements Initializable {
         this.currentUser = username;
         migrateLegacyNullUserNotes();
         if (currentNoteName != null && tabPane != null && tabPane.getTabs().isEmpty()) {
-            loadNote(currentNoteName);
+            loadNoteAsync(currentNoteName);
         }
     }
 
@@ -111,7 +122,7 @@ public class EditorController implements Initializable {
             return;
         }
         if (noteName != null) {
-            loadNote(noteName);
+            loadNoteAsync(noteName);
         } else {
             createNewTab(null);
         }
@@ -122,6 +133,7 @@ public class EditorController implements Initializable {
         setupFontCombos();
         setupKeyboardShortcuts();
         setupToolbarListeners();
+        setupTagControls();
 
         tabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             if (newTab != null) {
@@ -131,6 +143,7 @@ public class EditorController implements Initializable {
                     refreshFormatToggleButtons(editor);
                 }
             }
+            refreshTagControls();
         });
 
         startAutoSave();
@@ -153,7 +166,12 @@ public class EditorController implements Initializable {
                 stopBackgroundTimers();
                 mainApp.showDashboard(currentUser);
             }
+            refreshTagControls();
         });
+    }
+
+    private void setupTagControls() {
+        refreshTagControls();
     }
 
     private void setupFontCombos() {
@@ -250,6 +268,12 @@ public class EditorController implements Initializable {
         if (replaceMenuItem != null) {
             replaceMenuItem.setAccelerator(new KeyCodeCombination(KeyCode.H, KeyCombination.SHORTCUT_DOWN));
             replaceMenuItem.setOnAction(this::handleReplace);
+        }
+        if (addTagMenuItem != null) {
+            addTagMenuItem.setOnAction(this::handleAddTag);
+        }
+        if (manageTagMenuItem != null) {
+            manageTagMenuItem.setOnAction(this::handleManageTags);
         }
         if (wordWrapMenuItem != null) {
             wordWrapMenuItem.setSelected(true);
@@ -404,56 +428,55 @@ public class EditorController implements Initializable {
         return false;
     }
 
-    private void loadNote(String noteName) {
-        // Load from user-specific directory
-        String userNotesDir = getUserNotesDir();
-        File notesDir = new File(userNotesDir);
-        File file = null;
-
-        if (noteName != null && noteName.contains(".")) {
-            File direct = new File(userNotesDir, noteName);
-            if (direct.exists() && direct.isFile()) {
-                file = direct;
+    private void loadNoteAsync(String noteName) {
+        Task<LoadedNote> task = new Task<>() {
+            @Override
+            protected LoadedNote call() throws Exception {
+                Path userNotesDir = Path.of(getUserNotesDir());
+                File file = noteService.resolve(userNotesDir, noteName)
+                        .map(Path::toFile)
+                        .orElse(null);
+                if (file == null || !file.exists()) {
+                    return new LoadedNote(noteName, null, null);
+                }
+                return new LoadedNote(noteName, file, Files.readString(file.toPath()));
             }
-        }
+        };
 
-        if (file == null && notesDir.exists() && notesDir.isDirectory()) {
-            File[] matchingFiles = notesDir.listFiles((dir, name) -> {
-                int lastDot = name.lastIndexOf('.');
-                String nameWithoutExt = lastDot > 0 ? name.substring(0, lastDot) : name;
-                return nameWithoutExt.equals(noteName);
-            });
-
-            if (matchingFiles != null && matchingFiles.length > 0) {
-                file = matchingFiles[0];
-            }
-        }
-
-        if (file == null && (noteName == null || !noteName.contains("."))) {
-            file = new File(userNotesDir, noteName + ".txt");
-        }
-
-        if (file.exists()) {
-            try {
+        task.setOnSucceeded(event -> {
+            LoadedNote loadedNote = task.getValue();
+            if (loadedNote.file() == null) {
                 createNewTab(noteName);
+                return;
+            }
+
+            try {
+                createNewTab(loadedNote.noteName());
                 Tab currentTab = tabPane.getSelectionModel().getSelectedItem();
                 RichTextEditor editor = tabEditorMap.get(currentTab);
-                loadEditorFromFile(editor, file);
+                loadEditorFromContent(editor, loadedNote.file(), loadedNote.content());
                 editor.setFont(Font.font(SettingsManager.getFontFamily(), SettingsManager.getFontSize()));
-                editor.setLanguageFromFileName(file.getName());
-                tabFilePathMap.put(currentTab, file.getAbsolutePath());
-                tabManagedNotePathMap.put(currentTab, file.getAbsolutePath());
-                loadRemoteBinding(currentTab, file);
+                editor.setLanguageFromFileName(loadedNote.file().getName());
+                tabFilePathMap.put(currentTab, loadedNote.file().getAbsolutePath());
+                tabManagedNotePathMap.put(currentTab, loadedNote.file().getAbsolutePath());
+                loadRemoteBinding(currentTab, loadedNote.file());
                 tabPendingRemoteSyncMap.put(currentTab, false);
                 markTabModified(currentTab, false);
                 fileStatusLabel.setText("Loaded");
+                refreshTagControls();
             } catch (IOException | ClassNotFoundException e) {
                 fileStatusLabel.setText("Error loading file");
                 showError("Failed to load file: " + e.getMessage());
             }
-        } else {
-            createNewTab(noteName);
-        }
+        });
+        task.setOnFailed(event -> {
+            fileStatusLabel.setText("Error loading file");
+            showError("Failed to load file: " + safeMessage(task.getException()));
+        });
+
+        Thread thread = new Thread(task, "load-note");
+        thread.setDaemon(true);
+        thread.start();
     }
 
     private boolean saveTab(Tab tab) {
@@ -479,6 +502,9 @@ public class EditorController implements Initializable {
             editor.setLanguageFromFileName(file.getName());
             markTabModified(tab, false);
             fileStatusLabel.setText("Saved: " + file.getName());
+            if (tab.equals(tabPane.getSelectionModel().getSelectedItem())) {
+                refreshTagControls();
+            }
             return true;
         } catch (IOException e) {
             fileStatusLabel.setText("Error saving file");
@@ -501,14 +527,14 @@ public class EditorController implements Initializable {
         if (userSegment.isBlank()) {
             userSegment = "default";
         }
-        return "notes/" + userSegment;
+        return AppConstants.NOTES_DIR + "/" + userSegment;
     }
 
     private void migrateLegacyNullUserNotes() {
         if (currentUser == null || currentUser.isBlank()) {
             return;
         }
-        File legacyDir = new File("notes/null");
+        File legacyDir = new File(AppConstants.NOTES_DIR + "/null");
         if (!legacyDir.exists() || !legacyDir.isDirectory()) {
             return;
         }
@@ -556,7 +582,7 @@ public class EditorController implements Initializable {
                     }
                 });
             }
-        }, 30000, 30000);
+        }, AppConstants.AUTOSAVE_INTERVAL_MS, AppConstants.AUTOSAVE_INTERVAL_MS);
     }
 
     private void startRemoteAutoSave() {
@@ -646,6 +672,7 @@ public class EditorController implements Initializable {
             }
             tabPendingRemoteSyncMap.put(currentTab, false);
             markTabModified(currentTab, false);
+            refreshTagControls();
         } catch (IOException | ClassNotFoundException e) {
             showError("Failed to open file: " + e.getMessage());
         }
@@ -654,18 +681,21 @@ public class EditorController implements Initializable {
     private void writeEditorToFile(RichTextEditor editor, File file) throws IOException {
         file.getParentFile().mkdirs();
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-            writer.write(STYLED_DOC_HEADER);
+            writer.write(AppConstants.STYLED_DOC_HEADER);
             writer.newLine();
             writer.write(encodeDocument(editor.toDocument()));
         }
     }
 
     private void loadEditorFromFile(RichTextEditor editor, File file) throws IOException, ClassNotFoundException {
-        String content = Files.readString(file.toPath());
-        if (content.startsWith(STYLED_DOC_HEADER + System.lineSeparator())
-                || content.startsWith(STYLED_DOC_HEADER + "\n")
-                || content.equals(STYLED_DOC_HEADER)) {
-            String encoded = content.substring(STYLED_DOC_HEADER.length()).stripLeading();
+        loadEditorFromContent(editor, file, Files.readString(file.toPath()));
+    }
+
+    private void loadEditorFromContent(RichTextEditor editor, File file, String content) throws IOException, ClassNotFoundException {
+        if (content.startsWith(AppConstants.STYLED_DOC_HEADER + System.lineSeparator())
+                || content.startsWith(AppConstants.STYLED_DOC_HEADER + "\n")
+                || content.equals(AppConstants.STYLED_DOC_HEADER)) {
+            String encoded = content.substring(AppConstants.STYLED_DOC_HEADER.length()).stripLeading();
             editor.fromDocument(decodeDocument(encoded));
             return;
         }
@@ -836,6 +866,7 @@ public class EditorController implements Initializable {
             if (!previousManagedFile.getAbsolutePath().equals(managedFile.getAbsolutePath())
                     && previousManagedFile.exists()
                     && isManagedNotesFile(previousManagedFile)) {
+                noteTagService.renameNote(Path.of(getUserNotesDir()), previousManagedFile.getName(), managedFile.getName());
                 RemoteNoteRegistry.remove(Path.of(getUserNotesDir()), previousManagedFile.getName());
                 Files.deleteIfExists(previousManagedFile.toPath());
             }
@@ -921,7 +952,7 @@ public class EditorController implements Initializable {
 
     private String serializeEditorContent(RichTextEditor editor) {
         try {
-            return STYLED_DOC_HEADER + System.lineSeparator() + encodeDocument(editor.toDocument());
+            return AppConstants.STYLED_DOC_HEADER + System.lineSeparator() + encodeDocument(editor.toDocument());
         } catch (IOException e) {
             return editor.getText();
         }
@@ -959,6 +990,185 @@ public class EditorController implements Initializable {
             suffix++;
         }
         return candidate;
+    }
+
+    @FXML private void handleAddTag(ActionEvent event) {
+        Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
+        Path managedNotePath = currentManagedNotePath(selectedTab);
+        if (managedNotePath == null) {
+            showError("Save the note inside your QuillPad notes folder before assigning tags.");
+            return;
+        }
+        showAddTagDialog(managedNotePath);
+    }
+
+    private void showAddTagDialog(Path managedNotePath) {
+        Set<Tag> existingTags = noteTagService.getTags(Path.of(getUserNotesDir()), managedNotePath.getFileName().toString());
+        if (existingTags.size() >= AppConstants.MAX_TAGS_PER_FILE) {
+            showError("A note can have at most " + AppConstants.MAX_TAGS_PER_FILE + " tags.");
+            return;
+        }
+
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Add Tag");
+        dialog.setHeaderText("Add a tag to this note");
+
+        ButtonType addButtonType = new ButtonType("Add Tag", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(addButtonType, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        TextField tagField = new TextField();
+        tagField.setPromptText("Tag name");
+        grid.add(new Label("Tag:"), 0, 0);
+        grid.add(tagField, 1, 0);
+
+        dialog.getDialogPane().setContent(grid);
+        Button addButton = (Button) dialog.getDialogPane().lookupButton(addButtonType);
+        addButton.disableProperty().bind(tagField.textProperty().isEmpty());
+
+        Platform.runLater(tagField::requestFocus);
+
+        Optional<ButtonType> result = dialog.showAndWait();
+        if (result.isEmpty() || result.get() != addButtonType) {
+            return;
+        }
+
+        try {
+            if (noteTagService.getTags(Path.of(getUserNotesDir()), managedNotePath.getFileName().toString()).size() >= AppConstants.MAX_TAGS_PER_FILE) {
+                showError("A note can have at most " + AppConstants.MAX_TAGS_PER_FILE + " tags.");
+                return;
+            }
+            noteTagService.addTag(Path.of(getUserNotesDir()), managedNotePath.getFileName().toString(), tagField.getText());
+            refreshTagControls();
+        } catch (Exception e) {
+            showError("Failed to add tag: " + safeMessage(e));
+        }
+    }
+
+    @FXML private void handleManageTags(ActionEvent event) {
+        showManageTagsDialog();
+    }
+
+    private void refreshTagControls() {
+        boolean editable = currentManagedNotePath(tabPane == null ? null : tabPane.getSelectionModel().getSelectedItem()) != null;
+        if (addTagMenuItem != null) {
+            addTagMenuItem.setDisable(!editable);
+        }
+        if (manageTagMenuItem != null) {
+            manageTagMenuItem.setDisable(currentUser == null || currentUser.isBlank());
+        }
+        renderTagChips();
+    }
+
+    private void renderTagChips() {
+        if (tagChipPane == null) {
+            return;
+        }
+        tagChipPane.getChildren().clear();
+        Path managedNotePath = currentManagedNotePath(tabPane == null ? null : tabPane.getSelectionModel().getSelectedItem());
+        if (managedNotePath == null) {
+            tagChipPane.getChildren().add(new Label("Save this note into QuillPad storage to manage tags."));
+            return;
+        }
+
+        Set<Tag> tags = noteTagService.getTags(Path.of(getUserNotesDir()), managedNotePath.getFileName().toString());
+        if (tags.isEmpty()) {
+            tagChipPane.getChildren().add(new Label("No tags assigned."));
+            return;
+        }
+
+        for (Tag tag : tags) {
+            Button chip = new Button("#" + tag.displayName() + " ×");
+            chip.getStyleClass().add("icon-button");
+            chip.setOnAction(event -> {
+                try {
+                    noteTagService.removeTag(Path.of(getUserNotesDir()), managedNotePath.getFileName().toString(), tag.displayName());
+                    renderTagChips();
+                } catch (IOException e) {
+                    showError("Failed to remove tag: " + e.getMessage());
+                }
+            });
+            tagChipPane.getChildren().add(chip);
+        }
+    }
+
+    private Path currentManagedNotePath(Tab tab) {
+        if (tab == null) {
+            return null;
+        }
+        String managedPath = tabManagedNotePathMap.get(tab);
+        if (managedPath == null || managedPath.isBlank()) {
+            return null;
+        }
+        Path path = Path.of(managedPath);
+        return Files.exists(path) ? path : null;
+    }
+
+    private void showManageTagsDialog() {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Manage Tags");
+        dialog.setHeaderText("Rename or delete reusable tags");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.CLOSE);
+        dialog.getDialogPane().setPrefSize(480, 420);
+
+        ObservableList<Tag> tagItems = FXCollections.observableArrayList(noteTagService.getAllTags(Path.of(getUserNotesDir())));
+        ListView<Tag> tagListView = new ListView<>(tagItems);
+        tagListView.setCellFactory(listView -> new ListCell<>() {
+            @Override
+            protected void updateItem(Tag item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : "#" + item.displayName());
+            }
+        });
+
+        TextField renameField = new TextField();
+        renameField.setPromptText("New tag name");
+        Button renameButton = new Button("Rename");
+        Button deleteTagButton = new Button("Delete");
+        renameButton.disableProperty().bind(javafx.beans.binding.Bindings.or(tagListView.getSelectionModel().selectedItemProperty().isNull(), renameField.textProperty().isEmpty()));
+        deleteTagButton.disableProperty().bind(tagListView.getSelectionModel().selectedItemProperty().isNull());
+
+        renameButton.setOnAction(action -> {
+            Tag selectedTag = tagListView.getSelectionModel().getSelectedItem();
+            if (selectedTag == null) {
+                return;
+            }
+            try {
+                noteTagService.renameTag(Path.of(getUserNotesDir()), selectedTag.displayName(), renameField.getText());
+                renameField.clear();
+                tagItems.setAll(noteTagService.getAllTags(Path.of(getUserNotesDir())));
+                refreshTagControls();
+            } catch (Exception e) {
+                showError("Failed to rename tag: " + safeMessage(e));
+            }
+        });
+
+        deleteTagButton.setOnAction(action -> {
+            Tag selectedTag = tagListView.getSelectionModel().getSelectedItem();
+            if (selectedTag == null) {
+                return;
+            }
+            try {
+                noteTagService.deleteTag(Path.of(getUserNotesDir()), selectedTag.displayName());
+                tagItems.setAll(noteTagService.getAllTags(Path.of(getUserNotesDir())));
+                refreshTagControls();
+            } catch (IOException e) {
+                showError("Failed to delete tag: " + e.getMessage());
+            }
+        });
+
+        VBox content = new VBox(10,
+                new Label("Available tags"),
+                tagListView,
+                new HBox(8, renameField, renameButton, deleteTagButton));
+        content.setPadding(new Insets(10));
+        VBox.setVgrow(tagListView, javafx.scene.layout.Priority.ALWAYS);
+        dialog.getDialogPane().setContent(content);
+        dialog.showAndWait();
     }
 
     @FXML private void handleRenameFile(ActionEvent event) {
@@ -1039,6 +1249,7 @@ public class EditorController implements Initializable {
                 if (isManagedNotesFile(oldPath.toFile())) {
                     tabManagedNotePathMap.put(selectedTab, newPath.toString());
                     RemoteNoteRegistry.rename(Path.of(getUserNotesDir()), oldPath.getFileName().toString(), newPath.getFileName().toString());
+                    noteTagService.renameNote(Path.of(getUserNotesDir()), oldPath.getFileName().toString(), newPath.getFileName().toString());
                 }
             } catch (IOException e) {
                 showError("Failed to rename file: " + e.getMessage());
@@ -1055,6 +1266,7 @@ public class EditorController implements Initializable {
             editor.setLanguageFromFileName(newFileName);
         }
         fileStatusLabel.setText("Renamed: " + newFileName);
+        refreshTagControls();
     }
 
     @FXML private void handleCloseTab(ActionEvent event) {
@@ -1308,6 +1520,9 @@ public class EditorController implements Initializable {
     }
 
     private void applyFontFamily() {
+        if (updatingToolbarState) {
+            return;
+        }
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
         if (selectedTab != null) {
             RichTextEditor editor = tabEditorMap.get(selectedTab);
@@ -1319,6 +1534,9 @@ public class EditorController implements Initializable {
     }
 
     private void applyFontSize() {
+        if (updatingToolbarState) {
+            return;
+        }
         Tab selectedTab = tabPane.getSelectionModel().getSelectedItem();
         if (selectedTab != null) {
             RichTextEditor editor = tabEditorMap.get(selectedTab);
@@ -1369,10 +1587,17 @@ public class EditorController implements Initializable {
         if (editor == null) {
             return;
         }
+        updatingToolbarState = true;
+        try {
+            fontFamilyCombo.setValue(editor.getCurrentFontFamily());
+            fontSizeCombo.setValue(editor.getCurrentFontSize());
         boldButton.setSelected(editor.isBoldActive());
         italicButton.setSelected(editor.isItalicActive());
         underlineButton.setSelected(editor.isUnderlineActive());
         strikethroughButton.setSelected(editor.isStrikethroughActive());
+        } finally {
+            updatingToolbarState = false;
+        }
     }
 
     private void applyTextColor() {
@@ -1417,6 +1642,16 @@ public class EditorController implements Initializable {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    private String safeMessage(Throwable throwable) {
+        if (throwable == null || throwable.getMessage() == null || throwable.getMessage().isBlank()) {
+            return "unknown error";
+        }
+        return throwable.getMessage();
+    }
+
+    private record LoadedNote(String noteName, File file, String content) {
     }
 
     private void showFindDialog(RichTextEditor editor) {
