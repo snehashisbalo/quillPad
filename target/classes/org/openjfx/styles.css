@@ -26,7 +26,11 @@
    =========================== */
 
 .login-container {
-    -fx-background-color: linear-gradient(to bottom right, #667eea 0%, #764ba2 100%);
+    -fx-background-color: linear-gradient(to bottom right, rgba(9, 13, 20, 0.48), rgba(17, 22, 30, 0.72));
+    -fx-background-image: url("credits-bg.png");
+    -fx-background-size: cover;
+    -fx-background-position: center center;
+    -fx-background-repeat: no-repeat;
 }
 
 .login-left-panel {
@@ -41,6 +45,12 @@
 .app-title {
     -fx-text-fill: white;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 3);
+}
+
+.app-wordmark {
+    -fx-font-family: "Orbitron", "Segoe UI", sans-serif;
+    -fx-font-weight: bold;
+    -fx-letter-spacing: 2px;
 }
 
 .app-subtitle {
@@ -233,6 +243,10 @@
 
 .page-title {
     -fx-text-fill: #2C3E50;
+}
+
+.version-label.app-wordmark {
+    -fx-font-size: 12px;
 }
 
 .stats-label {

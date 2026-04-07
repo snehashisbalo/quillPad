@@ -295,6 +295,7 @@ public class CollabServer {
         
         System.out.println("Document created: " + documentName + " by " + userId);
     }
+
     
     void handleDeleteDocument(String userId, String documentId, ClientHandler handler) {
         Document doc = documents.get(documentId);

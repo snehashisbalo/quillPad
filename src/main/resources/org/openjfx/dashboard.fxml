@@ -140,7 +140,7 @@
                 <HBox alignment="CENTER_LEFT" spacing="15">
                     <children>
                         <Label text="📝" style="-fx-font-size: 28px;"/>
-                        <Label text="QuillPad" styleClass="page-title">
+                        <Label text="QuillPad" styleClass="page-title app-wordmark">
                             <font>
                                 <Font name="System Bold" size="22"/>
                             </font>

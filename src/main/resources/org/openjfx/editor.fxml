@@ -169,7 +169,7 @@
                 <Region HBox.hgrow="ALWAYS"/>
 
                 <Label text="QuillPad v1.0"
-                       styleClass="version-label"/>
+                       styleClass="version-label app-wordmark"/>
             </children>
         </HBox>
     </bottom>

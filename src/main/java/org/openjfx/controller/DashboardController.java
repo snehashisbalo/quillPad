@@ -941,7 +941,8 @@ public class DashboardController implements Initializable {
         dialog.setHeaderText("Application Settings");
 
         ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+        ButtonType creditsButtonType = new ButtonType("Credits", ButtonBar.ButtonData.LEFT);
+        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, creditsButtonType, ButtonType.CANCEL);
 
         GridPane grid = new GridPane();
         grid.setHgap(10);
@@ -988,7 +989,29 @@ public class DashboardController implements Initializable {
 
         dialog.getDialogPane().setContent(grid);
 
+        Button saveButton = (Button) dialog.getDialogPane().lookupButton(saveButtonType);
+        if (saveButton != null) {
+            saveButton.setStyle("-fx-font-weight: bold;");
+        }
+        Button creditsButton = (Button) dialog.getDialogPane().lookupButton(creditsButtonType);
+        if (creditsButton != null) {
+            creditsButton.setText("View Credits");
+            creditsButton.setStyle(
+                    "-fx-background-color: linear-gradient(to right, #0f4c75, #3282b8);"
+                            + "-fx-text-fill: white;"
+                            + "-fx-font-weight: bold;"
+                            + "-fx-background-radius: 999;"
+                            + "-fx-padding: 8 16 8 16;"
+            );
+        }
+
         Optional<ButtonType> result = dialog.showAndWait();
+        if (result.isPresent() && result.get() == creditsButtonType) {
+            if (mainApp != null) {
+                mainApp.showCredits();
+            }
+            return;
+        }
         if (result.isPresent() && result.get() == saveButtonType) {
             String selectedFont = fontCombo.getValue();
             if (selectedFont != null) {

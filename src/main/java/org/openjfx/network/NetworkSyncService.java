@@ -466,6 +466,7 @@ public final class NetworkSyncService {
             .replace("\t", "\\t");
     }
 
+
     private static String safeMessage(Exception e) {
         if (e.getMessage() == null || e.getMessage().isBlank()) {
             return "no message";
@@ -500,4 +501,5 @@ public final class NetworkSyncService {
 
     public record RemoteNoteRef(String noteName, String author) {
     }
+
 }

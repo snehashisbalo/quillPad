@@ -24,7 +24,7 @@
               prefWidth="400"
               minWidth="300">
             <children>
-                <Label text="QuillPad" styleClass="app-title">
+                <Label text="QuillPad" styleClass="app-title app-wordmark">
                     <font>
                         <Font name="System Bold" size="42"/>
                     </font>

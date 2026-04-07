@@ -52,6 +52,7 @@ org/openjfx/network/NetworkSyncService$DeleteResult.class
 org/openjfx/controller/EditorController$8.class
 org/openjfx/network/NoteSyncServer$DeleteByAuthorHandler.class
 org/openjfx/network/NoteSyncServer$NotesHandler.class
+org/openjfx/controller/CreditsController.class
 org/openjfx/model/Tag.class
 org/openjfx/service/NoteTagService$TagIndex.class
 org/quillpad/collab/Message$Type.class

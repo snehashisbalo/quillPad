@@ -2,8 +2,10 @@ package org.openjfx;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import org.openjfx.controller.CreditsController;
 import org.openjfx.controller.DashboardController;
 import org.openjfx.controller.EditorController;
 import org.openjfx.controller.LoginController;
@@ -19,12 +21,13 @@ public class QuillPad extends Application {
     private Scene registerScene;
     private Scene dashboardScene;
     private Scene editorScene;
+    private Scene creditsScene;
     private String currentUser;
 
     @Override
     public void start(Stage stage) throws IOException {
         this.primaryStage = stage;
-        stage.setTitle("QuillPad - Professional Note Editor");
+        stage.setTitle("QuillPad");
 
         // Load login scene
         loadLoginScene();
@@ -80,6 +83,16 @@ public class QuillPad extends Application {
         }
     }
 
+    private void loadCreditsScene() throws IOException {
+        if (creditsScene == null) {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("credits.fxml"));
+            creditsScene = new Scene(loader.load(), 1100, 750);
+            ThemeManager.registerScene(creditsScene);
+            CreditsController controller = loader.getController();
+            controller.setMainApp(this);
+        }
+    }
+
     public void showLogin() {
         applyScenePreservingWindowState(loginScene);
         currentUser = null;
@@ -123,6 +136,19 @@ public class QuillPad extends Application {
         }
     }
 
+    public void showCredits() {
+        try {
+            loadCreditsScene();
+            applyScenePreservingWindowState(creditsScene);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void showPreviousScene() {
+        showDashboard(currentUser);
+    }
+
     private void applyScenePreservingWindowState(Scene nextScene) {
         if (primaryStage == null || nextScene == null) {
             return;
@@ -141,16 +167,28 @@ public class QuillPad extends Application {
         double y = primaryStage.getY();
 
         primaryStage.setScene(nextScene);
+        primaryStage.setX(x);
+        primaryStage.setY(y);
+        primaryStage.setWidth(width);
+        primaryStage.setHeight(height);
 
-        if (!wasFullScreen && !wasMaximized) {
-            primaryStage.setX(x);
-            primaryStage.setY(y);
-            primaryStage.setWidth(width);
-            primaryStage.setHeight(height);
+        Parent root = nextScene.getRoot();
+        if (root != null) {
+            root.applyCss();
+            root.requestLayout();
+            root.layout();
         }
 
-        primaryStage.setMaximized(wasMaximized);
-        primaryStage.setFullScreen(wasFullScreen);
+        if (wasMaximized && !primaryStage.isMaximized()) {
+            primaryStage.setMaximized(true);
+        } else if (!wasMaximized && primaryStage.isMaximized()) {
+            primaryStage.setMaximized(false);
+        }
+        if (wasFullScreen && !primaryStage.isFullScreen()) {
+            primaryStage.setFullScreen(true);
+        } else if (!wasFullScreen && primaryStage.isFullScreen()) {
+            primaryStage.setFullScreen(false);
+        }
     }
 
     public String getCurrentUser() {

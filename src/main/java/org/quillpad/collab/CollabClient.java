@@ -184,7 +184,12 @@ public class CollabClient {
 
             case WRITE_ACCESS_STATUS:
                 Platform.runLater(() -> {
-                    String owner = message.getPayload();
+                    String statusPayload = message.getPayload();
+                    String owner = statusPayload;
+                    if (statusPayload != null && statusPayload.contains("|")) {
+                        String[] parts = statusPayload.split("\\|", -1);
+                        owner = parts.length > 0 ? parts[0] : "";
+                    }
                     currentWriteOwner.set((owner == null || owner.isBlank()) ? null : owner);
                 });
                 break;
@@ -231,7 +236,6 @@ public class CollabClient {
             notifyError("Cannot update: document is null");
             return;
         }
-
         String docId = document.getDocumentId();
         if (docId == null || docId.isBlank()) {
             docId = currentDocumentId.get();
@@ -366,4 +370,5 @@ public class CollabClient {
     public StringProperty currentWriteOwnerProperty() {
         return currentWriteOwner;
     }
+
 }

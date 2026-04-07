@@ -94,6 +94,7 @@ public class EditorController implements Initializable {
     private Timer remoteAutoSaveTimer;
     private int untitledCounter = 1;
     private boolean updatingToolbarState;
+    private boolean dashboardNavigationPending;
 
     private static final String[] FONT_FAMILIES = {
         "System", "Arial", "Times New Roman", "Courier New", "Consolas", 
@@ -163,8 +164,7 @@ public class EditorController implements Initializable {
                 }
             }
             if (tabPane.getTabs().isEmpty() && mainApp != null) {
-                stopBackgroundTimers();
-                mainApp.showDashboard(currentUser);
+                navigateBackToDashboard();
             }
             refreshTagControls();
         });
@@ -632,6 +632,23 @@ public class EditorController implements Initializable {
             remoteAutoSaveTimer.cancel();
             remoteAutoSaveTimer = null;
         }
+    }
+
+    private void navigateBackToDashboard() {
+        if (mainApp == null || dashboardNavigationPending) {
+            return;
+        }
+        dashboardNavigationPending = true;
+        stopBackgroundTimers();
+        Platform.runLater(() -> {
+            try {
+                if (mainApp != null) {
+                    mainApp.showDashboard(currentUser);
+                }
+            } finally {
+                dashboardNavigationPending = false;
+            }
+        });
     }
 
     @FXML private void handleNew(ActionEvent event) {
@@ -1315,22 +1332,13 @@ public class EditorController implements Initializable {
                             saveTab(tab);
                         }
                     }
-                    if (mainApp != null) {
-                        stopBackgroundTimers();
-                        mainApp.showDashboard(currentUser);
-                    }
+                    navigateBackToDashboard();
                 } else if (result.get() == discardButton) {
-                    if (mainApp != null) {
-                        stopBackgroundTimers();
-                        mainApp.showDashboard(currentUser);
-                    }
+                    navigateBackToDashboard();
                 }
             }
         } else {
-            if (mainApp != null) {
-                stopBackgroundTimers();
-                mainApp.showDashboard(currentUser);
-            }
+            navigateBackToDashboard();
         }
     }
 
