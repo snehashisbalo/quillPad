@@ -1,11 +1,14 @@
 package org.openjfx.component;
 
 import org.fxmisc.richtext.InlineCssTextArea;
+import org.fxmisc.richtext.LineNumberFactory;
 import org.openjfx.ThemeManager;
 import org.openjfx.model.StyledDocument;
 
 import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
+import javafx.scene.Node;
+import javafx.scene.control.Labeled;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.Parent;
@@ -36,6 +39,7 @@ public class RichTextEditor extends StackPane {
     private boolean modified;
     private ListChangeListener<String> themeListener;
     private Parent themeListenerRoot;
+    private boolean showLineNumbers;
 
     private Language currentLanguage = Language.PLAIN_TEXT;
     private boolean syntaxHighlightingEnabled = true;
@@ -158,6 +162,7 @@ public class RichTextEditor extends StackPane {
         textArea.getStyleClass().add("rich-editor-area");
         textArea.setWrapText(true);
         textArea.setUseInitialStyleForInsertion(false);
+        setShowLineNumbers(false);
         sceneProperty().addListener((obs, oldScene, newScene) -> {
             detachThemeListener();
             attachThemeListeners(newScene);
@@ -468,6 +473,36 @@ public class RichTextEditor extends StackPane {
         );
         textArea.setStyle(style);
         setStyle("-fx-background-color: " + editorBg + ";");
+        if (showLineNumbers) {
+            refreshLineNumberFactory();
+        }
+    }
+
+    private void refreshLineNumberFactory() {
+        if (!showLineNumbers) {
+            textArea.setParagraphGraphicFactory(null);
+            return;
+        }
+        var baseFactory = LineNumberFactory.get(textArea);
+        textArea.setParagraphGraphicFactory(index -> {
+            Node node = baseFactory.apply(index);
+            if (node instanceof Labeled labeled) {
+                labeled.setStyle(String.format(
+                        "-fx-font-family: \"%s\"; -fx-font-size: %.0fpx;",
+                        fontFamily, fontSize
+                ));
+            }
+            return node;
+        });
+    }
+
+    public void setShowLineNumbers(boolean showLineNumbers) {
+        this.showLineNumbers = showLineNumbers;
+        refreshLineNumberFactory();
+    }
+
+    public boolean isShowLineNumbers() {
+        return showLineNumbers;
     }
 
     private void attachThemeListeners(Scene scene) {

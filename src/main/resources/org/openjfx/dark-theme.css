@@ -463,6 +463,12 @@
     -fx-stroke: #d4d4d4;
 }
 
+.dark-theme .rich-text-editor .lineno {
+    -fx-background-color: transparent;
+    -fx-text-fill: #858585;
+    -fx-border-color: transparent;
+}
+
 .dark-theme .text-area {
     -fx-control-inner-background: #1e1e1e;
     -fx-text-fill: #d4d4d4;

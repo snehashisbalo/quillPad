@@ -1,5 +1,5 @@
 #QuillPad Settings
-#Wed Apr 08 00:03:46 GMT+06:00 2026
+#Wed Apr 08 10:11:12 GMT+06:00 2026
 font.family=Times New Roman
 font.size=32
 network.api_key=
@@ -7,5 +7,5 @@ network.base_url=http\://localhost\:8080
 network.enabled=true
 network.namespace=shared
 network.remote_autosave_seconds=5
-starred.notes=newnewwwwww\u001FnewnewNew\u001Fgoodboy
+starred.notes=newnewwwwww\u001FnewnewNew\u001Fgoodboy\u001Fmain.cpp
 theme=DARK

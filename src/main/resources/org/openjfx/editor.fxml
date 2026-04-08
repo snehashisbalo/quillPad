@@ -51,6 +51,7 @@
                     <Menu text="View">
                         <items>
                             <CheckMenuItem fx:id="wordWrapMenuItem" selected="true" text="Word Wrap" />
+                            <CheckMenuItem fx:id="lineNumbersMenuItem" text="Line Numbers" />
                             <MenuItem fx:id="increaseFontMenuItem" text="Increase Font Size" />
                             <MenuItem fx:id="decreaseFontMenuItem" text="Decrease Font Size" />
                             <MenuItem fx:id="resetFontMenuItem" text="Reset Font Size" />

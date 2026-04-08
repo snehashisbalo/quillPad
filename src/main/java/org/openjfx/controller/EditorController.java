@@ -65,6 +65,7 @@ public class EditorController implements Initializable {
     @FXML private MenuItem addTagMenuItem;
     @FXML private MenuItem manageTagMenuItem;
     @FXML private CheckMenuItem wordWrapMenuItem;
+    @FXML private CheckMenuItem lineNumbersMenuItem;
     @FXML private MenuItem aboutMenuItem;
     @FXML private MenuItem increaseFontMenuItem;
     @FXML private MenuItem decreaseFontMenuItem;
@@ -143,6 +144,9 @@ public class EditorController implements Initializable {
                 if (editor != null) {
                     updateStatus(editor, editor.getCaretPosition());
                     refreshFormatToggleButtons(editor);
+                    if (lineNumbersMenuItem != null) {
+                        lineNumbersMenuItem.setSelected(editor.isShowLineNumbers());
+                    }
                 }
             }
             refreshTagControls();
@@ -284,6 +288,10 @@ public class EditorController implements Initializable {
             wordWrapMenuItem.setSelected(true);
             wordWrapMenuItem.setOnAction(this::handleWordWrap);
         }
+        if (lineNumbersMenuItem != null) {
+            lineNumbersMenuItem.setSelected(false);
+            lineNumbersMenuItem.setOnAction(this::handleLineNumbersToggle);
+        }
         if (aboutMenuItem != null) {
             aboutMenuItem.setOnAction(this::handleAbout);
         }
@@ -329,6 +337,7 @@ public class EditorController implements Initializable {
         RichTextEditor editor = new RichTextEditor();
         editor.setDocumentName(tabTitle);
         editor.setWrapText(wordWrapMenuItem != null && wordWrapMenuItem.isSelected());
+        editor.setShowLineNumbers(lineNumbersMenuItem != null && lineNumbersMenuItem.isSelected());
         editor.setFont(Font.font(SettingsManager.getFontFamily(), SettingsManager.getFontSize()));
         editor.setLanguageFromFileName(tabTitle);
 
@@ -1588,6 +1597,16 @@ public class EditorController implements Initializable {
             RichTextEditor editor = editorForTab(tab);
             if (editor != null) {
                 editor.setWrapText(wrapText);
+            }
+        }
+    }
+
+    @FXML private void handleLineNumbersToggle(ActionEvent event) {
+        boolean showLineNumbers = lineNumbersMenuItem != null && lineNumbersMenuItem.isSelected();
+        for (Tab tab : tabPane.getTabs()) {
+            RichTextEditor editor = editorForTab(tab);
+            if (editor != null) {
+                editor.setShowLineNumbers(showLineNumbers);
             }
         }
     }
