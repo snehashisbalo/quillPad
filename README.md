@@ -1,197 +1,111 @@
-# QuillPad IDE
+# QuillPad
 
-A production-grade JavaFX IDE with comprehensive features for software development.
+QuillPad is a JavaFX desktop note editor with local user workspaces, rich-text formatting, tagging, trash recovery, and optional HTTP sync through a small bundled server.
 
-## Features
+It is designed as a lightweight desktop workspace: sign in, create notes, organize them by tags or stars, and optionally publish or pull notes through the included sync API.
 
-### Core Editor Features
+## Highlights
 
-- **Multi-tab Editing**: Open and edit multiple files in tabs
-- **File Operations**: New, Open, Save, Save As with file chooser dialogs
-- **Edit Operations**: Undo/Redo, Cut/Copy/Paste, Select All
-- **Find/Replace**: Text search with dialog-based find and replace
-- **Syntax Highlighting**: Basic syntax highlighting support
-- **Line Numbers**: Display line numbers in the editor
-- **Status Bar**: Shows line/column position, encoding, line ending
+- Local per-user note storage under `notes/<username>/`
+- Login and registration backed by `users.txt`
+- Multi-tab editor with autosave
+- Rich-text formatting, font controls, and theme switching
+- Tagging, starred notes, search, and trash restore
+- Import existing files into the editor
+- Optional remote sync, upload, download, and remote cleanup
+- Included lightweight Java HTTP sync server
 
-### File & Project Management
+## Quick Start
 
-- **Recent Files**: Tracks recently opened files
-- **File Explorer**: Side panel showing project structure
-- **Multiple Encoding Support**: UTF-8 encoding by default
-- **Recent Sessions**: Saves and restores recent files
-- **Optional Network Sync**: Sync notes to a remote HTTP server
-
-### View Features
-
-- **Zoom Controls**: Zoom in/out with keyboard shortcuts
-- **Side Panel Toggle**: Show/hide the file explorer
-- **Terminal Panel**: Integrated terminal panel
-- **Light and Dark Themes**: Switch between the two built-in modes
-
-### Keyboard Shortcuts
-
-| Action | Shortcut |
-|--------|----------|
-| New File | Ctrl+N |
-| Open File | Ctrl+O |
-| Save | Ctrl+S |
-| Close | Ctrl+W |
-| Undo | Ctrl+Z |
-| Redo | Ctrl+Y |
-| Cut | Ctrl+X |
-| Copy | Ctrl+C |
-| Paste | Ctrl+V |
-| Select All | Ctrl+A |
-| Find | Ctrl+F |
-| Find/Replace | Ctrl+Alt+F |
-| Zoom In | Ctrl++ |
-| Zoom Out | Ctrl+- |
-| Reset Zoom | Ctrl+0 |
-| Command Palette | Ctrl+Shift+P |
-
-## Building
-
-### Prerequisites
-
-- Java 17 or higher
-- Maven 3.6+
-
-### Build Commands
-
-```bash
-# Compile the project
-mvn clean compile
-
-# Package as JAR
-mvn package -DskipTests
-
-# Run tests
-mvn test
-```
-
-## Running
-
-### Using Maven
+### Run the desktop app
 
 ```bash
 mvn javafx:run
 ```
 
-### Using the JAR
+### Build the packaged jar
 
 ```bash
+mvn clean package -DskipTests
 java -jar target/quillpad-1.0.0-SNAPSHOT.jar
 ```
 
-### Using the launcher script
+### Run the local sync server
 
 ```bash
-./run.sh
+./run-backend.sh
 ```
 
-## Project Structure
+The server starts on `http://localhost:8080` by default.
 
+## Requirements
+
+- Java 21 or newer
+- Maven 3.6+
+
+## Project Layout
+
+```text
+.
+├── src/main/java/org/openjfx/
+│   ├── QuillPad.java
+│   ├── controller/
+│   ├── component/
+│   ├── network/
+│   └── service/
+├── src/main/resources/org/openjfx/
+├── notes/
+├── remote-notes/
+├── run-backend.sh
+├── pom.xml
+└── INSTALLATION.md
 ```
-quillpad/
-├── src/
-│   └── main/
-│       ├── java/org/quillpad/
-│       │   └── core/application/
-│       │       ├── QuillPadApplication.java  (Main IDE class)
-│       │       ├── EditorTab.java            (Editor tab component)
-│       │       ├── SidePanel.java            (File explorer)
-│       │       ├── TerminalPanel.java        (Terminal)
-│       │       ├── StatusBar.java            (Status bar)
-│       │       └── CommandPalette.java       (Command palette)
-│       └── resources/
-│           └── org/quillpad/
-│               └── css/
-│                   └── main.css              (Dark theme)
-├── target/
-│   └── quillpad-1.0.0-SNAPSHOT.jar          (Executable JAR)
-└── pom.xml                                   (Maven configuration)
+
+## How It Works
+
+### Local storage
+
+QuillPad keeps project data in the repository directory:
+
+- `notes/<username>/` for each user's notes
+- `notes/<username>/trash/` for deleted notes
+- `quillpad.settings` for application settings
+- `users.txt` for account records
+- `remote-notes/` for the bundled sync server's storage
+
+### Remote sync
+
+If network sync is enabled in the app settings, QuillPad can:
+
+- upload selected local notes
+- browse notes stored on the server
+- download remote notes into the local workspace
+- remotely autosave notes already linked to a remote copy
+- delete uploaded notes by author
+
+The bundled server exposes endpoints under `/api/...` and is implemented in `org.openjfx.network.NoteSyncServer`.
+
+## Recommended Commands
+
+```bash
+# run the app
+mvn javafx:run
+
+# compile only
+mvn clean compile
+
+# build distributable jar
+mvn clean package -DskipTests
+
+# run the sync server on a custom port
+./run-backend.sh 9090
 ```
 
-## Architecture
+## Documentation
 
-### Main Components
+- Installation and setup: [INSTALLATION.md](./INSTALLATION.md)
 
-1. **QuillPadApplication** - Main application class extending `javafx.application.Application`
-   - Initializes UI components
-   - Manages application lifecycle
-   - Handles exit and cleanup
+## Notes
 
-2. **EditorTab** - Individual editor tab with:
-   - TextArea for editing
-   - Line number display
-   - Status indicator
-   - Edit operations
-
-3. **SidePanel** - Left panel with:
-   - File tree view
-   - Recent files list
-
-4. **TerminalPanel** - Bottom terminal panel
-
-5. **StatusBar** - Bottom status bar
-
-## Configuration
-
-Settings are stored in:
-
-- Linux/macOS: `~/.quillpad/`
-- Windows: `%USERPROFILE%\.quillpad\`
-
-### Network Sync
-
-Network sync is configured from `Dashboard -> Settings`:
-
-- Enable Network Sync
-- Server URL (default: `http://localhost:8080`)
-- API Key (optional, sent as `X-API-Key`)
-
-Current HTTP contract used by QuillPad:
-
-1. Upsert note
-   - `POST /api/notes/sync`
-   - JSON body: `{"username":"...","noteName":"...","content":"..."}`
-2. Delete note
-   - `DELETE /api/notes?username=<user>&noteName=<note>`
-
-### Local Test Backend (Included)
-
-This repo now includes a small backend server that implements the sync API.
-
-1. Start server
-   - `./run-backend.sh`
-   - custom port: `./run-backend.sh 9090`
-2. Optional API key protection
-   - `export QUILLPAD_API_KEY=my-secret`
-   - then run `./run-backend.sh`
-3. Data location
-   - saved under `remote-notes/<username>/<noteName>.txt`
-4. Point QuillPad settings to this server
-   - Server URL: `http://localhost:8080` (or your custom port)
-   - API Key: same value as `QUILLPAD_API_KEY` if enabled
-
-## Future Enhancements
-
-- Git integration with visual diff and blame
-- Plugin architecture for extensibility
-- Advanced syntax highlighting
-- Code completion/IntelliSense
-- Project management
-- Debugger integration
-- Custom keybindings
-- Theme customization
-- Workspace persistence
-- Crash recovery
-
-## License
-
-MIT License
-
-## Authors
-
-QuillPad Team
+- `run.sh` is a legacy launcher with machine-specific JavaFX paths. Prefer Maven-based commands unless you rewrite that script for your environment.
+- The Maven wrapper is present as `./mvnw`, but the checked-in `mvnw.cmd` is empty, so Windows users should use an installed `mvn` unless they restore the wrapper script.
